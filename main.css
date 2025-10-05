@@ -215,7 +215,7 @@ span.category-icon.icon-party-popper {}
     background: rgba(0, 0, 0, 0.5);
 }
 
-.activity-avatar {
+.activity-avatar, .thread-avatar {
     width: 50px;
     height: 50px;
     border-radius: 50%;
@@ -239,7 +239,7 @@ span.category-icon.icon-party-popper {}
 }
 
 .activity-content h4 a:hover {
-    color: var(--text-light);
+    color: var(--secondary-color);
 }
 
 .activity-content p,
