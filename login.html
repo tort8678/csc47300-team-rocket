@@ -26,12 +26,7 @@
 
   <main class="container auth-wrap">
     <section class="auth-card">
-      <div id="logged-in" style="display:none">
-        <h2 id="user-welcome">Welcome Back!</h2>
-        <button class="btn btn-primary btn-block" onclick="logout()">Logout</button>
-      </div>
-
-      <div id="logged-out" style="display:none">
+      <div id="logged-out">
       <h2>Welcome back</h2>
       <p class="muted">Sign in to start posting and join discussions.</p>
       
@@ -55,12 +50,7 @@
 
   <script>
     if (localStorage.getItem('loggedInUser')) {
-      document.getElementById('logged-in').style.display = 'block';
-      document.getElementById('logged-out').style.display = 'none';
-      document.getElementById('user-welcome').innerText = 'Welcome back, ' + localStorage.getItem('loggedInUser') + '!';
-    } else {
-      document.getElementById('logged-in').style.display = 'none';
-      document.getElementById('logged-out').style.display = 'block';
+      window.location.href = 'profile.html';
     }
     function validateForm() {
       const username = document.getElementById('username').value;
@@ -79,8 +69,6 @@
         return false;
       }
 
-      // If all checks pass
-      alert('Login successful!');
       localStorage.setItem('loggedInUser', username);
       return true;
     }

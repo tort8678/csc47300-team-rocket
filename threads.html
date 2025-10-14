@@ -19,7 +19,10 @@
                 <li><a href="categories.html">Categories</a></li>
                 <li><a href="threads.html" class="active">Recent Threads</a></li>
                 <li><a href="profile.html">Profile</a></li>
-                <li><a href="login.html">Login</a></li>
+                <li id="logged-out"><a href="login.html">Login</a></li>
+                <li id="logged-in" style="display:none;">
+                    <button onclick="logout()" class="logout-btn">Logout</button>
+                </li>
             </ul>
         </nav>
     </div>
@@ -300,5 +303,25 @@
         </div>
     </div>
 </footer>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const loggedInUser = localStorage.getItem('loggedInUser');
+        const loggedInEl = document.getElementById('logged-in');
+        const loggedOutEl = document.getElementById('logged-out');
 
+        if (loggedInUser) {
+            loggedInEl.style.display = 'block';
+            loggedOutEl.style.display = 'none';
+        } else {
+            loggedInEl.style.display = 'none';
+            loggedOutEl.style.display = 'block';
+        }
+    });
+
+    function logout() {
+        localStorage.removeItem('loggedInUser');
+        alert('You have been logged out.');
+        window.location.href = 'login.html';
+    }
+</script>
 </body></html>
