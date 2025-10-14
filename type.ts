@@ -6,6 +6,7 @@ interface User {
     email: string;
     bio: string;
     createdAt: Date;
+    EMPLID: number;
 }
 
 interface Post {
