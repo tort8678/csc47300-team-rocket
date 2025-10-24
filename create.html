@@ -6,6 +6,7 @@
     <title>Create New Thread - DamIt Forum</title>
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="create.css">
+    <script src="script.js"></script>
 </head>
 <body>
 <header>
@@ -35,7 +36,7 @@
     </div>
 
     <div class="form-container">
-        <form id="newThreadForm">
+        <form id="newThreadForm" action="threads.html" method="post">
             <div class="form-group">
                 <label for="title">Title</label>
                 <p class="helper-text">Choose a clear, descriptive title that summarizes your topic</p>
@@ -52,7 +53,7 @@
             <div class="form-group">
                 <label for="category">Category</label>
                 <p class="helper-text">Choose the most relevant category to help others find your post</p>
-                <select id="category" name="category" required>
+                <select id="category" name="category" required defaultValue="select a category">
                     <option value="">Select a category</option>
 
                     <optgroup label="Academic">
@@ -100,7 +101,7 @@
 
             <div class="form-actions">
                 <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Post</button>
+                <button type="submit" class="btn btn-primary" onclick="createThread()">Post</button>
             </div>
         </form>
     </div>

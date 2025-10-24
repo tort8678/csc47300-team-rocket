@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="main.css" />
   <link rel="stylesheet" href="https://unpkg.com/lucide-static@latest/font/lucide.css" />
   <link rel="stylesheet" href="login.css" />
+  <script src="script.js"></script>
 </head>
 <body class="page-login">
   <header>
@@ -48,34 +49,12 @@
 
 
         <div class="auth-actions">
-          <button type="submit" class="btn btn-primary btn-full" onclick="validateForm()">Sign Up</button>
+          <button type="submit" class="btn btn-primary btn-full" onclick="createUser()">Sign Up</button>
         </div>
       </form>
     </section>
   </main>
 
-  <script>
-    function validateForm() {
-        const password = document.getElementById('password').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-
-        if (password !== confirmPassword || password.length < 1) {
-            alert('Passwords do not match.');
-            return false; // Prevent form submission
-        }
-        const userInfo = {
-            email: document.getElementById('email').value,
-            username: document.getElementById('username').value,
-            emplid: document.getElementById('emplid').value,
-            password: password
-        };
-        localStorage.setItem(document.getElementById('username').value, JSON.stringify(userInfo));
-        alert('Account created successfully!');
-        console.log("user created successfully")
-        return true;
-
-    }
-  </script>
 
   <footer>
     <div class="container">
