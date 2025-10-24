@@ -347,15 +347,15 @@ footer {
 }
 
 .btn-primary {
-    /* fallbacks if a token is missing */
-    --btn-bg: var(--secondary-color, #a78bfa);
-    --btn-fg: var(--on-secondary, #0b0c0f);
-
-    background: linear-gradient(180deg, color-mix(in srgb, var(--btn-bg) 92%, #fff 8%), var(--btn-bg));
-    color: var(--btn-fg);
-    box-shadow:
-            0 8px 24px rgba(0,0,0,.25),
-            0 0 0 1px color-mix(in srgb, var(--btn-bg) 45%, #000 55%) inset;
+    padding: 0.75rem 2rem;
+    background: rgba(256, 256, 256, 0.2);
+    color: white;
+    border: 2px solid white;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.3s;
+    font-size: 15px;
 }
 
 .btn-primary:hover {

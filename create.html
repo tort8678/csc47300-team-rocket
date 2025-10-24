@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Thread - DamIt Forum</title>
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="create.css">
+</head>
+<body>
+<header>
+    <div class="container">
+        <div class="logo">
+            <h1>DamIt</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="categories.html">Categories</a></li>
+                <li><a href="threads.html">Recent Threads</a></li>
+                <li><a href="profile.html">Profile</a></li>
+                <li id="logged-out"><a href="login.html">Login</a></li>
+                <li id="logged-in" style="display:none;">
+                    <button onclick="logout()" class="logout-btn">Logout</button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<main class="container">
+    <div class="page-header">
+        <h1>Create New Thread</h1>
+        <p>Start a new discussion in the community</p>
+    </div>
+
+    <div class="form-container">
+        <form id="newThreadForm">
+            <div class="form-group">
+                <label for="title">Title</label>
+                <p class="helper-text">Choose a clear, descriptive title that summarizes your topic</p>
+                <input
+                        type="text"
+                        id="title"
+                        name="title"
+                        placeholder="Enter a descriptive title for your thread"
+                        required
+                >
+
+            </div>
+
+            <div class="form-group">
+                <label for="category">Category</label>
+                <p class="helper-text">Choose the most relevant category to help others find your post</p>
+                <select id="category" name="category" required>
+                    <option value="">Select a category</option>
+
+                    <optgroup label="Academic">
+                        <option value="academic-help">Academic Help</option>
+                        <option value="course-reviews">Course Reviews</option>
+                        <option value="research-projects">Research & Projects</option>
+                    </optgroup>
+
+                    <optgroup label="Campus Life">
+                        <option value="events-activities">Events & Activities</option>
+                        <option value="clubs-organizations">Clubs & Organizations</option>
+                        <option value="sports-fitness">Sports & Fitness</option>
+                    </optgroup>
+
+                    <optgroup label="Career & Life">
+                        <option value="career-internships">Career & Internships</option>
+                        <option value="housing-roommates">Housing & Roommates</option>
+                        <option value="buy-sell">Buy & Sell</option>
+                    </optgroup>
+
+                    <optgroup label="Entertainment">
+                        <option value="gaming">Gaming</option>
+                        <option value="movies-tv">Movies & TV</option>
+                        <option value="music">Music</option>
+                    </optgroup>
+
+                    <optgroup label="General">
+                        <option value="general-discussion">General Discussion</option>
+                        <option value="announcements">Announcements</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="content">Content</label>
+                <p class="helper-text">Provide detailed information and context to help others understand and respond to your post</p>
+                <textarea
+                        id="content"
+                        name="content"
+                        placeholder="Write your post content here..."
+                        required
+                ></textarea>
+
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Post</button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<footer>
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>DamIt Forum</h3>
+                <p>Your university community hub</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Guidelines</a></li>
+                    <li><a href="#">FAQ</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2025 DamIt Forum. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const loggedInUser = localStorage.getItem('loggedInUser');
+        const loggedInEl = document.getElementById('logged-in');
+        const loggedOutEl = document.getElementById('logged-out');
+
+        if (loggedInUser) {
+            loggedInEl.style.display = 'block';
+            loggedOutEl.style.display = 'none';
+        } else {
+            loggedInEl.style.display = 'none';
+            loggedOutEl.style.display = 'block';
+        }
+    });
+
+    function logout() {
+        localStorage.removeItem('loggedInUser');
+        alert('You have been logged out.');
+        window.location.href = 'login.html';
+    }
+</script>
+</body>
+</html>

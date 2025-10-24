@@ -39,6 +39,12 @@
     outline: none;
     font-family: unset;
 }
+
+.auth-form input:focus {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+
 .auth-actions {
     display:flex;
     gap:.75rem;

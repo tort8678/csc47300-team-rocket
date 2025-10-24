@@ -31,6 +31,7 @@
     cursor: pointer;
     transition: transform 0.2s, opacity 0.3s;
     border: 2px solid white;
+    text-decoration: none;
 }
 
 .new-thread-btn:hover {
