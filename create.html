@@ -147,8 +147,8 @@
             loggedInEl.style.display = 'block';
             loggedOutEl.style.display = 'none';
         } else {
-            loggedInEl.style.display = 'none';
-            loggedOutEl.style.display = 'block';
+            window.location.href = 'login.html'
+            return
         }
     });
 
