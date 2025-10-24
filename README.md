@@ -11,7 +11,6 @@ Admin: Professor Isaiah Garrow
 Three Major Features:
 
 1. Create user account - creating an account that user's can register/log into
+2. Login to account - allowing users to securely access their registered account
+4. Create forum post - giving user's the ability to create a forum post
 
-2. Create forum post - giving user's the ability to create a forum post
-
-3. Comment on post - commenting on a forum post made by a user.
