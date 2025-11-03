@@ -1,15 +1,15 @@
-interface User {
+export interface User {
     id: string;
-    name: string;
+    username: string;
     password: string;
-    profilePictureUrl: string;
+    profilePictureUrl?: string;
     email: string;
-    bio: string;
+    bio?: string;
     createdAt: Date;
     EMPLID: number;
 }
 
-interface Post {
+export interface Post {
     id: string;
     threadId: string;
     authorId: string;
@@ -17,9 +17,13 @@ interface Post {
     createdAt: Date;
 }
 
-interface Thread {
+export interface Thread {
     id: string;
     title: string;
+    content: string;
+    author: string;
     createdAt: Date;
     category: string;
+    replies: number;
+    views: number;
 }
