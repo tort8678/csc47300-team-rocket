@@ -284,7 +284,7 @@ export default function Threads() {
                         </div>
                         <div className="thread-content">
                           <h3>
-                            <Link to={`/thread/${encodeURIComponent(thread.id)}`}>
+                            <Link to={`/thread/${encodeURIComponent(thread.id.split("_")[1])}`}>
                               {thread.title}
                             </Link>
                           </h3>

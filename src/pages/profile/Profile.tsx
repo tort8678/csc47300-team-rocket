@@ -331,7 +331,7 @@ export default function Profile() {
                                                     <div className="thread-avatar">{initials}</div>
                                                     <div className="thread-content">
                                                         <h3>
-                                                            <Link to={`/thread/${encodeURIComponent(thread.id)}`}>{thread.title}</Link>
+                                                            <Link to={`/thread/${encodeURIComponent(thread.id.split("_")[1])}`}>{thread.title}</Link>
                                                         </h3>
                                                         <p className="thread-preview">
                                                             {thread.content.substring(0, 150)}{thread.content.length > 150 ? '...' : ''}

@@ -214,7 +214,7 @@ export default function HomePage() {
                                         <div className="thread-avatar">{getThreadInitials(thread.author || 'Anonymous')}</div>
                                         <div className="thread-content">
                                             <h3>
-                                                <a href={`/thread/${encodeURIComponent(thread.id)}`}>{thread.title}</a>
+                                                <a href={`/thread/${encodeURIComponent(thread.id.split("_")[1])}`}>{thread.title}</a>
                                             </h3>
                                             <p className="thread-preview">{thread.content.substring(0, 150)}{thread.content.length > 150 ? '...' : ''}</p>
                                             <div className="thread-meta">
