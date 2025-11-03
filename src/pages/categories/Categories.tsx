@@ -142,17 +142,17 @@ const Categories: React.FC = () => {
   const getGroupIcon = (groupLabel: string) => {
     switch (groupLabel) {
       case 'Academic':
-        return <Library className="category-icon" />;
+        return <Library className="category-icon" size={40}/>;
       case 'Campus Life':
-        return <PartyPopper className="category-icon" />;
+        return <PartyPopper className="category-icon" size={40}/>;
       case 'Career & Life':
-        return <Briefcase className="category-icon" />;
+        return <Briefcase className="category-icon" size={40}/>;
       case 'Entertainment':
-        return <Gamepad2 className="category-icon" />;
+        return <Gamepad2 className="category-icon" size={40}/>;
       case 'General':
-        return <MessageSquare className="category-icon" />;
+        return <MessageSquare className="category-icon" size={40}/>;
       default:
-        return <MessageSquare className="category-icon" />;
+        return <MessageSquare className="category-icon" size={40}/>;
     }
   };
 
