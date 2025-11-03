@@ -163,14 +163,16 @@
 }
 
 .badge {
-    font-size: 2.5rem;
-    text-align: center;
     cursor: pointer;
-    transition: transform 0.3s;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 1rem;
+    background: #ffffff1a;
     border-radius: 10px;
-
+    padding: 1rem;
+    transition: transform .3s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 120px;
+    height: 95px;
 }
 
 .badge::before {
@@ -198,6 +200,7 @@
     background: rgba(0, 0, 0, 0.4);
     border-radius: 15px;
     box-shadow: var(--box-shadow);
+    height: max-content;
 }
 
 .activity-tabs {
@@ -380,4 +383,13 @@
         padding: 0.75rem 1rem;
         font-size: 0.938rem;
     }
+}
+
+.form-actions {
+    margin-top: 0 !important;
+    width: 100%;
+}
+
+.form-actions .btn {
+    width: 50px;
 }

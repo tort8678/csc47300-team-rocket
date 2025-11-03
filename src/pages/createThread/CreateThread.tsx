@@ -81,7 +81,7 @@ export default function CreateThread() {
 
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        
+
         if (!formData.category || !formData.title.trim() || !formData.content.trim() || !formData.author) {
             alert('Please fill in all required fields.');
             return;
@@ -144,27 +144,12 @@ export default function CreateThread() {
                         </div>
 
                         <div className="form-group">
-                            <label htmlFor="author">Author</label>
-                            <p className="helper-text">You are posting as the logged-in user</p>
-                            <input
-                                type="text"
-                                id="author"
-                                name="author"
-                                placeholder="author"
-                                required
-                                value={formData.author}
-                                readOnly
-                                disabled
-                            />
-                        </div>
-
-                        <div className="form-group">
                             <label htmlFor="category">Category</label>
                             <p className="helper-text">Choose the most relevant category to help others find your post</p>
-                            <select 
-                                id="category" 
-                                name="category" 
-                                required 
+                            <select
+                                id="category"
+                                name="category"
+                                required
                                 value={formData.category}
                                 onChange={handleInputChange}
                             >
@@ -196,15 +181,15 @@ export default function CreateThread() {
                         </div>
 
                         <div className="form-actions">
-                            <button 
-                                type="button" 
-                                className="btn btn-secondary" 
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
                                 onClick={handleCancel}
                             >
                                 Cancel
                             </button>
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 className="btn btn-primary"
                             >
                                 Post

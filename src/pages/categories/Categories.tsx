@@ -1,10 +1,160 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Library, PartyPopper, Briefcase, Gamepad2, MessageSquare } from 'lucide-react';
 import '../../styles/categories.css';
 import Header from "../../components/header";
 import Footer from "../../components/footer";
+import type { Thread } from '../../types/types';
+
+interface CategoryOption {
+  value: string;
+  label: string;
+}
+
+interface CategoryGroup {
+  label: string;
+  options: CategoryOption[];
+}
 
 const Categories: React.FC = () => {
+  const [categoryData, setCategoryData] = useState<Record<string, any>>({});
+
+  const categoryGroups: CategoryGroup[] = [
+    {
+      label: "Academic",
+      options: [
+        { value: "academic-help", label: "Academic Help" },
+        { value: "course-reviews", label: "Course Reviews" },
+        { value: "research-projects", label: "Research & Projects" }
+      ]
+    },
+    {
+      label: "Campus Life",
+      options: [
+        { value: "events-activities", label: "Events & Activities" },
+        { value: "clubs-organizations", label: "Clubs & Organizations" },
+        { value: "sports-fitness", label: "Sports & Fitness" }
+      ]
+    },
+    {
+      label: "Career & Life",
+      options: [
+        { value: "career-internships", label: "Career & Internships" },
+        { value: "housing-roommates", label: "Housing & Roommates" },
+        { value: "buy-sell", label: "Buy & Sell" }
+      ]
+    },
+    {
+      label: "Entertainment",
+      options: [
+        { value: "gaming", label: "Gaming" },
+        { value: "movies-tv", label: "Movies & TV" },
+        { value: "music", label: "Music" }
+      ]
+    },
+    {
+      label: "General",
+      options: [
+        { value: "general-discussion", label: "General Discussion" },
+        { value: "announcements", label: "Announcements" }
+      ]
+    }
+  ];
+
+  const categoryDescriptions: Record<string, string> = {
+    "academic-help": "Study groups, homework help, and course discussions",
+    "course-reviews": "Share your experiences and review courses",
+    "research-projects": "Collaborate on research and academic projects",
+    "events-activities": "Campus events, parties, and social gatherings",
+    "clubs-organizations": "Join and discuss student organizations",
+    "sports-fitness": "Intramural sports, gym, and fitness discussions",
+    "career-internships": "Job postings, internships, and career advice",
+    "housing-roommates": "Find roommates and discuss housing options",
+    "buy-sell": "Textbooks, furniture, and other items",
+    "gaming": "Video games, board games, and gaming meetups",
+    "movies-tv": "Discuss movies, TV shows, and streaming",
+    "music": "Share music, discuss concerts, and find bandmates",
+    "general-discussion": "Random topics and casual conversations",
+    "announcements": "Official forum and university announcements"
+  };
+
+  useEffect(() => {
+    // Load all threads from localStorage
+    const threads: Thread[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      if (key.startsWith('thread_')) {
+        try {
+          const t = JSON.parse(localStorage.getItem(key) as string) as Thread;
+          if (t) threads.push(t);
+        } catch (e) {
+          // ignore malformed entries
+        }
+      }
+    }
+
+    // Calculate stats per category (using value, not label)
+    const stats: Record<string, any> = {};
+    threads.forEach(thread => {
+      const cat = thread.category || 'general-discussion';
+      if (!stats[cat]) {
+        stats[cat] = {
+          threads: 0,
+          posts: 0,
+          latestThread: null
+        };
+      }
+      stats[cat].threads++;
+      stats[cat].posts += 1 + (thread.replies || 0);
+
+      // Update latest thread
+      if (!stats[cat].latestThread || new Date(thread.createdAt) > new Date(stats[cat].latestThread.createdAt)) {
+        stats[cat].latestThread = {
+          title: thread.title,
+          author: thread.author || 'Anonymous',
+          createdAt: thread.createdAt
+        };
+      }
+    });
+
+    setCategoryData(stats);
+  }, []);
+
+  const getTimeAgo = (date: string | Date) => {
+    const now = new Date();
+    const threadDate = new Date(date);
+    const seconds = Math.floor((now.getTime() - threadDate.getTime()) / 1000);
+
+    if (seconds < 60) return `${seconds} seconds ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} min${minutes > 1 ? 's' : ''} ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days} day${days > 1 ? 's' : ''} ago`;
+    return new Date(date).toLocaleDateString();
+  };
+
+  const getCategoryStats = (categoryValue: string) => {
+    return categoryData[categoryValue] || { threads: 0, posts: 0, latestThread: null };
+  };
+
+  const getGroupIcon = (groupLabel: string) => {
+    switch (groupLabel) {
+      case 'Academic':
+        return <Library className="category-icon" />;
+      case 'Campus Life':
+        return <PartyPopper className="category-icon" />;
+      case 'Career & Life':
+        return <Briefcase className="category-icon" />;
+      case 'Entertainment':
+        return <Gamepad2 className="category-icon" />;
+      case 'General':
+        return <MessageSquare className="category-icon" />;
+      default:
+        return <MessageSquare className="category-icon" />;
+    }
+  };
 
   return (
       <div>
@@ -17,357 +167,46 @@ const Categories: React.FC = () => {
           </div>
 
           <div className="categories-container">
-            {/* Academic */}
-            <div className="category-section">
-              <h2><Library className="category-icon" size={40}/> Academic</h2>
-              <div className="category-list">
-                <div className="category-item">
-                  <div className="category-info">
-                    <h3>Academic Help</h3>
-                    <p>Study groups, homework help, and course discussions</p>
-                  </div>
-                  <div className="category-stats">
-                    <div className="stat-item">
-                      <span className="stat-value">2,345</span>
-                      <span className="stat-label">Threads</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-value">12,890</span>
-                      <span className="stat-label">Posts</span>
-                    </div>
-                  </div>
-                  <div className="latest-post">
-                    <span className="latest-label">Latest:</span>
-                    <span className="latest-thread">Calculus II Final Prep</span>
-                    <span className="latest-user">by john_doe</span>
-                    <span className="latest-time">5 mins ago</span>
-                  </div>
-                </div>
-
-                <div className="category-item">
-                  <div className="category-info">
-                    <h3>Course Reviews</h3>
-                    <p>Share your experiences and review courses</p>
-                  </div>
-                  <div className="category-stats">
-                    <div className="stat-item">
-                      <span className="stat-value">1,234</span>
-                      <span className="stat-label">Threads</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-value">8,456</span>
-                      <span className="stat-label">Posts</span>
-                    </div>
-                  </div>
-                  <div className="latest-post">
-                    <span className="latest-label">Latest:</span>
-                    <span className="latest-thread">CS201 with Prof. Smith</span>
-                    <span className="latest-user">by tech_student</span>
-                    <span className="latest-time">15 mins ago</span>
+            {categoryGroups.map((group) => (
+                <div key={group.label} className="category-section">
+                  <h2>{getGroupIcon(group.label)} {group.label}</h2>
+                  <div className="category-list">
+                    {group.options.map((option) => {
+                      const stats = getCategoryStats(option.value);
+                      return (
+                          <div key={option.value} className="category-item">
+                            <div className="category-info">
+                              <h3>{option.label}</h3>
+                              <p>{categoryDescriptions[option.value]}</p>
+                            </div>
+                            <div className="category-stats">
+                              <div className="stat-item">
+                                <span className="stat-value">{stats.threads}</span>
+                                <span className="stat-label">Threads</span>
+                              </div>
+                              <div className="stat-item">
+                                <span className="stat-value">{stats.posts}</span>
+                                <span className="stat-label">Posts</span>
+                              </div>
+                            </div>
+                            {stats.latestThread ? (
+                                <div className="latest-post">
+                                  <span className="latest-label">Latest:</span>
+                                  <span className="latest-thread">{stats.latestThread.title}</span>
+                                  <span className="latest-user">by {stats.latestThread.author}</span>
+                                  <span className="latest-time">{getTimeAgo(stats.latestThread.createdAt)}</span>
+                                </div>
+                            ) : (
+                                <div className="latest-post">
+                                  <span className="latest-label">No threads yet</span>
+                                </div>
+                            )}
+                          </div>
+                      );
+                    })}
                   </div>
                 </div>
-
-                <div className="category-item">
-                  <div className="category-info">
-                    <h3>Research &amp; Projects</h3>
-                    <p>Collaborate on research and academic projects</p>
-                  </div>
-                  <div className="category-stats">
-                    <div className="stat-item">
-                      <span className="stat-value">567</span>
-                      <span className="stat-label">Threads</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-value">3,421</span>
-                      <span className="stat-label">Posts</span>
-                    </div>
-                  </div>
-                  <div className="latest-post">
-                    <span className="latest-label">Latest:</span>
-                    <span className="latest-thread">Looking for research partners</span>
-                    <span className="latest-user">by research_fan</span>
-                    <span className="latest-time">1 hour ago</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Campus Life */}
-            <div className="category-section">
-              <h2><PartyPopper className="category-icon" size={40}/>Campus Life</h2>
-              <div className="category-list">
-                <div className="category-item">
-                  <div className="category-info">
-                    <h3>Events &amp; Activities</h3>
-                    <p>Campus events, parties, and social gatherings</p>
-                  </div>
-                  <div className="category-stats">
-                    <div className="stat-item">
-                      <span className="stat-value">1,823</span>
-                      <span className="stat-label">Threads</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-value">8,432</span>
-                      <span className="stat-label">Posts</span>
-                    </div>
-                  </div>
-                  <div className="latest-post">
-                    <span className="latest-label">Latest:</span>
-                    <span className="latest-thread">Spring Concert Lineup</span>
-                    <span className="latest-user">by music_lover</span>
-                    <span className="latest-time">20 mins ago</span>
-                  </div>
-                </div>
-
-                <div className="category-item">
-                  <div className="category-info">
-                    <h3>Clubs &amp; Organizations</h3>
-                    <p>Join and discuss student organizations</p>
-                  </div>
-                  <div className="category-stats">
-                    <div className="stat-item">
-                      <span className="stat-value">892</span>
-                      <span className="stat-label">Threads</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-value">4,567</span>
-                      <span className="stat-label">Posts</span>
-                    </div>
-                  </div>
-                  <div className="latest-post">
-                    <span className="latest-label">Latest:</span>
-                    <span className="latest-thread">Photography Club Meeting</span>
-                    <span className="latest-user">by shutterbug</span>
-                    <span className="latest-time">45 mins ago</span>
-                  </div>
-                </div>
-
-                <div className="category-item">
-                  <div className="category-info">
-                    <h3>Sports &amp; Fitness</h3>
-                    <p>Intramural sports, gym, and fitness discussions</p>
-                  </div>
-                  <div className="category-stats">
-                    <div className="stat-item">
-                      <span className="stat-value">645</span>
-                      <span className="stat-label">Threads</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-value">3,234</span>
-                      <span className="stat-label">Posts</span>
-                    </div>
-                  </div>
-                  <div className="latest-post">
-                    <span className="latest-label">Latest:</span>
-                    <span className="latest-thread">Pickup Basketball Tonight?</span>
-                    <span className="latest-user">by hoops_fan</span>
-                    <span className="latest-time">2 hours ago</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Career & Life */}
-            <div className="category-section">
-              <h2><Briefcase className="category-icon" size={40}/>Career &amp; Life</h2>
-              <div className="category-list">
-                <div className="category-item">
-                  <div className="category-info">
-                    <h3>Career &amp; Internships</h3>
-                    <p>Job postings, internships, and career advice</p>
-                  </div>
-                  <div className="category-stats">
-                    <div className="stat-item">
-                      <span className="stat-value">956</span>
-                      <span className="stat-label">Threads</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-value">4,321</span>
-                      <span className="stat-label">Posts</span>
-                    </div>
-                  </div>
-                  <div className="latest-post">
-                    <span className="latest-label">Latest:</span>
-                    <span className="latest-thread">Summer Internship Tips</span>
-                    <span className="latest-user">by career_seeker</span>
-                    <span className="latest-time">30 mins ago</span>
-                  </div>
-                </div>
-
-                <div className="category-item">
-                  <div className="category-info">
-                    <h3>Housing &amp; Roommates</h3>
-                    <p>Find roommates and discuss housing options</p>
-                  </div>
-                  <div className="category-stats">
-                    <div className="stat-item">
-                      <span className="stat-value">678</span>
-                      <span className="stat-label">Threads</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-value">3,211</span>
-                      <span className="stat-label">Posts</span>
-                    </div>
-                  </div>
-                  <div className="latest-post">
-                    <span className="latest-label">Latest:</span>
-                    <span className="latest-thread">Looking for Fall Roommate</span>
-                    <span className="latest-user">by housing_hunter</span>
-                    <span className="latest-time">1 hour ago</span>
-                  </div>
-                </div>
-
-                <div className="category-item">
-                  <div className="category-info">
-                    <h3>Buy &amp; Sell</h3>
-                    <p>Textbooks, furniture, and other items</p>
-                  </div>
-                  <div className="category-stats">
-                    <div className="stat-item">
-                      <span className="stat-value">1,234</span>
-                      <span className="stat-label">Threads</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-value">5,678</span>
-                      <span className="stat-label">Posts</span>
-                    </div>
-                  </div>
-                  <div className="latest-post">
-                    <span className="latest-label">Latest:</span>
-                    <span className="latest-thread">Selling Biology Textbooks</span>
-                    <span className="latest-user">by book_seller</span>
-                    <span className="latest-time">3 hours ago</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Entertainment */}
-            <div className="category-section">
-              <h2><Gamepad2 className="category-icon" size={40}/>Entertainment</h2>
-              <div className="category-list">
-                <div className="category-item">
-                  <div className="category-info">
-                    <h3>Gaming</h3>
-                    <p>Video games, board games, and gaming meetups</p>
-                  </div>
-                  <div className="category-stats">
-                    <div className="stat-item">
-                      <span className="stat-value">1,445</span>
-                      <span className="stat-label">Threads</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-value">9,876</span>
-                      <span className="stat-label">Posts</span>
-                    </div>
-                  </div>
-                  <div className="latest-post">
-                    <span className="latest-label">Latest:</span>
-                    <span className="latest-thread">LAN Party This Weekend</span>
-                    <span className="latest-user">by gamer_pro</span>
-                    <span className="latest-time">25 mins ago</span>
-                  </div>
-                </div>
-
-                <div className="category-item">
-                  <div className="category-info">
-                    <h3>Movies &amp; TV</h3>
-                    <p>Discuss movies, TV shows, and streaming</p>
-                  </div>
-                  <div className="category-stats">
-                    <div className="stat-item">
-                      <span className="stat-value">789</span>
-                      <span className="stat-label">Threads</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-value">4,567</span>
-                      <span className="stat-label">Posts</span>
-                    </div>
-                  </div>
-                  <div className="latest-post">
-                    <span className="latest-label">Latest:</span>
-                    <span className="latest-thread">What are you watching?</span>
-                    <span className="latest-user">by movie_buff</span>
-                    <span className="latest-time">50 mins ago</span>
-                  </div>
-                </div>
-
-                <div className="category-item">
-                  <div className="category-info">
-                    <h3>Music</h3>
-                    <p>Share music, discuss concerts, and find bandmates</p>
-                  </div>
-                  <div className="category-stats">
-                    <div className="stat-item">
-                      <span className="stat-value">567</span>
-                      <span className="stat-label">Threads</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-value">2,890</span>
-                      <span className="stat-label">Posts</span>
-                    </div>
-                  </div>
-                  <div className="latest-post">
-                    <span className="latest-label">Latest:</span>
-                    <span className="latest-thread">Looking for Drummer</span>
-                    <span className="latest-user">by band_leader</span>
-                    <span className="latest-time">4 hours ago</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* General */}
-            <div className="category-section">
-              <h2><MessageSquare className="category-icon" size={40}/>General</h2>
-              <div className="category-list">
-                <div className="category-item">
-                  <div className="category-info">
-                    <h3>General Discussion</h3>
-                    <p>Random topics and casual conversations</p>
-                  </div>
-                  <div className="category-stats">
-                    <div className="stat-item">
-                      <span className="stat-value">3,289</span>
-                      <span className="stat-label">Threads</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-value">18,765</span>
-                      <span className="stat-label">Posts</span>
-                    </div>
-                  </div>
-                  <div className="latest-post">
-                    <span className="latest-label">Latest:</span>
-                    <span className="latest-thread">Coffee Shop Recommendations</span>
-                    <span className="latest-user">by caffeine_addict</span>
-                    <span className="latest-time">10 mins ago</span>
-                  </div>
-                </div>
-
-                <div className="category-item">
-                  <div className="category-info">
-                    <h3>Announcements</h3>
-                    <p>Official forum and university announcements</p>
-                  </div>
-                  <div className="category-stats">
-                    <div className="stat-item">
-                      <span className="stat-value">123</span>
-                      <span className="stat-label">Threads</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-value">456</span>
-                      <span className="stat-label">Posts</span>
-                    </div>
-                  </div>
-                  <div className="latest-post">
-                    <span className="latest-label">Latest:</span>
-                    <span className="latest-thread">New Forum Guidelines</span>
-                    <span className="latest-user">by admin</span>
-                    <span className="latest-time">1 day ago</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </main>
 
