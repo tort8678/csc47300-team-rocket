@@ -21,7 +21,9 @@ export default function Register() {
         e.preventDefault();
         
         if (userInfo.password !== confirmPassword || userInfo.password.length < 1) {
-            alert('Passwords do not match or are empty.');
+            alert('Passwords do not match.');
+            setUserInfo({...userInfo, password: ''});
+            setConfirmPassword('');
             return;
         }
 
