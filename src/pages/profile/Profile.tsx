@@ -321,7 +321,7 @@ export default function Profile() {
                             <div className="activity-content">
                                 {displayedThreads.length === 0 ? (
                                     <div className="empty-message" style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-                                        No threads yet. <Link to="/createThread" style={{ color: '#4CAF50' }}>Create your first thread!</Link>
+                                        No threads yet. <Link to="/create" style={{ color: '#4CAF50' }}>Create your first thread!</Link>
                                     </div>
                                 ) : (
                                     <div className="threads-list">
