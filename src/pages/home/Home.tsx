@@ -1,8 +1,9 @@
 import Header from "../../components/header";
+import { Library, PartyPopper, Briefcase, Home, Gamepad2, MessageSquare, Eye } from 'lucide-react';
 import '../../styles/main.css';
 
 
-export default function Home() {
+export default function HomePage() {
     return (
         <div>
             <Header />
@@ -31,7 +32,7 @@ export default function Home() {
                     <h2>Popular Categories</h2>
                     <div className="category-grid">
                         <div className="category-card">
-                            <div className="category-icon icon-library"></div>
+                            <Library className="category-icon" size={40} />
                             <h3>Academic Help</h3>
                             <p>Study groups, homework help, and course discussions</p>
                             <div className="category-meta">
@@ -40,7 +41,7 @@ export default function Home() {
                             </div>
                         </div>
                         <div className="category-card">
-                            <div className="category-icon icon-party-popper"></div>
+                            <PartyPopper className="category-icon" size={40} />
                             <h3>Campus Life</h3>
                             <p>Events, clubs, and campus activities</p>
                             <div className="category-meta">
@@ -49,7 +50,7 @@ export default function Home() {
                             </div>
                         </div>
                         <div className="category-card">
-                            <div className="category-icon icon-briefcase-business"></div>
+                            <Briefcase className="category-icon" size={40} />
                             <h3>Career &amp; Internships</h3>
                             <p>Job postings, internships, and career advice</p>
                             <div className="category-meta">
@@ -58,7 +59,7 @@ export default function Home() {
                             </div>
                         </div>
                         <div className="category-card">
-                            <div className="category-icon icon-house"></div>
+                            <Home className="category-icon" size={40} />
                             <h3>Housing &amp; Roommates</h3>
                             <p>Find roommates and discuss housing options</p>
                             <div className="category-meta">
@@ -67,7 +68,7 @@ export default function Home() {
                             </div>
                         </div>
                         <div className="category-card">
-                            <div className="category-icon icon-gamepad-2"></div>
+                            <Gamepad2 className="category-icon" size={40} />
                             <h3>Entertainment</h3>
                             <p>Gaming, movies, music, and hobbies</p>
                             <div className="category-meta">
@@ -76,7 +77,7 @@ export default function Home() {
                             </div>
                         </div>
                         <div className="category-card">
-                            <div className="category-icon icon-message-square"></div>
+                            <MessageSquare className="category-icon" size={40} />
                             <h3>General Discussion</h3>
                             <p>Random topics and casual conversations</p>
                             <div className="category-meta">
@@ -89,43 +90,85 @@ export default function Home() {
 
                 <section className="recent-activity">
                     <h2>Recent Activity</h2>
-                    <div className="activity-list">
-                        <div className="activity-item">
-                            <div className="activity-avatar">JD</div>
-                            <div className="activity-content">
-                                <h4><a href="thread.html">Best study spots on campus?</a></h4>
-                                <p>Posted by <strong>john_doe</strong> in <a href="#" className="activity-category">Academic Help</a>
-                                </p>
-                                <span className="activity-time">5 minutes ago</span>
+                    <div className="threads-list">
+                        <div className="thread-item">
+                            <div className="thread-main">
+                                <div className="thread-avatar">JD</div>
+                                <div className="thread-content">
+                                    <h3>
+                                        <a href="thread.html">Best study spots on campus?</a>
+                                    </h3>
+                                    <p className="thread-preview">Hey everyone! Finals are coming up and I'm looking for some good study spots on campus. Any recommendations for quiet places?</p>
+                                    <div className="thread-meta">
+                                        <span className="thread-author">john_doe</span>
+                                        <span className="thread-category">Academic Help</span>
+                                        <span className="thread-time">5 minutes ago</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="activity-stats">
-                                <span>12 replies</span>
-                                <span>45 views</span>
+                            <div className="thread-stats">
+                                <div className="stat">
+                                    <MessageSquare size={20} />
+                                    <span className="stat-count">12</span>
+                                </div>
+                                <div className="stat">
+                                    <Eye size={20} />
+                                    <span className="stat-count">45</span>
+                                </div>
                             </div>
                         </div>
-                        <div className="activity-item">
-                            <div className="activity-avatar">SM</div>
-                            <div className="activity-content">
-                                <h4><a href="thread.html">Spring Break Trip Planning</a></h4>
-                                <p>Posted by <strong>sarah_m</strong> in <a href="#" className="activity-category">Campus Life</a></p>
-                                <span className="activity-time">23 minutes ago</span>
+
+                        <div className="thread-item">
+                            <div className="thread-main">
+                                <div className="thread-avatar">SM</div>
+                                <div className="thread-content">
+                                    <h3>
+                                        <a href="thread.html">Spring Break Trip Planning</a>
+                                    </h3>
+                                    <p className="thread-preview">Looking to organize a spring break trip with some friends. Where did you go last year? Any budget-friendly recommendations?</p>
+                                    <div className="thread-meta">
+                                        <span className="thread-author">sarah_m</span>
+                                        <span className="thread-category">Campus Life</span>
+                                        <span className="thread-time">23 minutes ago</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="activity-stats">
-                                <span>8 replies</span>
-                                <span>67 views</span>
+                            <div className="thread-stats">
+                                <div className="stat">
+                                    <MessageSquare size={20} />
+                                    <span className="stat-count">8</span>
+                                </div>
+                                <div className="stat">
+                                    <Eye size={20} />
+                                    <span className="stat-count">67</span>
+                                </div>
                             </div>
                         </div>
-                        <div className="activity-item">
-                            <div className="activity-avatar">AK</div>
-                            <div className="activity-content">
-                                <h4><a href="thread.html">Summer Internship Opportunities</a></h4>
-                                <p>Posted by <strong>alex_kim</strong> in <a href="#" className="activity-category">Career &amp;
-                                    Internships</a></p>
-                                <span className="activity-time">1 hour ago</span>
+
+                        <div className="thread-item">
+                            <div className="thread-main">
+                                <div className="thread-avatar">AK</div>
+                                <div className="thread-content">
+                                    <h3>
+                                        <a href="thread.html">Summer Internship Opportunities</a>
+                                    </h3>
+                                    <p className="thread-preview">Has anyone started applying for summer internships yet? I'd love to hear about your experiences and any tips for the application process.</p>
+                                    <div className="thread-meta">
+                                        <span className="thread-author">alex_kim</span>
+                                        <span className="thread-category">Career &amp; Internships</span>
+                                        <span className="thread-time">1 hour ago</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="activity-stats">
-                                <span>15 replies</span>
-                                <span>123 views</span>
+                            <div className="thread-stats">
+                                <div className="stat">
+                                    <MessageSquare size={20} />
+                                    <span className="stat-count">15</span>
+                                </div>
+                                <div className="stat">
+                                    <Eye size={20} />
+                                    <span className="stat-count">123</span>
+                                </div>
                             </div>
                         </div>
                     </div>

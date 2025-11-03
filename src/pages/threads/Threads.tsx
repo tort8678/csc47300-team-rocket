@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from 'react-router-dom';
+import { MessageSquare, Eye } from 'lucide-react';
 import Header from "../../components/header";
 import Footer from "../../components/footer";
 import '../../styles/threads.css';
@@ -96,11 +97,11 @@ export default function Threads() {
                 </div>
                 <div className="thread-stats">
                   <div className="stat">
-                    <span className="icon-message-square"></span>
+                    <MessageSquare size={20}/>
                     <span className="stat-count">{(thread as Thread).replies ?? 0}</span>
                   </div>
                   <div className="stat">
-                    <span className="icon-eye"></span>
+                    <Eye size={20}/>
                     <span className="stat-count">{(thread as Thread).views ?? 0}</span>
                   </div>
                 </div>

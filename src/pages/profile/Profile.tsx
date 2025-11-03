@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { GraduationCap, Calendar, MapPin, Crown, Star, HeartHandshake, Rocket } from 'lucide-react';
 import Header from "../../components/header";
 import Footer from "../../components/footer";
 import '../../styles/main.css';
@@ -9,7 +10,7 @@ import type { User } from '../../types/types';
 export default function Profile() {
     const navigate = useNavigate();
     const [user, setUser] = useState<User | null>(null);
-    
+
     useEffect(() => {
         const loggedInUsername = localStorage.getItem('loggedInUser');
         if (!loggedInUsername) {
@@ -43,7 +44,7 @@ export default function Profile() {
         month: 'long',
         year: 'numeric'
     });
-    
+
     return (
         <div>
             <Header />
@@ -76,19 +77,36 @@ export default function Profile() {
                                 <h3>About</h3>
                                 <p>CS major passionate about web development and AI. Always looking to collaborate on projects!</p>
                                 <div className="about-details">
-                                    <div className="detail-item"><span className="detail-icon icon-graduation-cap"></span><span>Computer Science</span></div>
-                                    <div className="detail-item"><span className="detail-icon icon-calendar"></span><span>className of 2026</span></div>
-                                    <div className="detail-item"><span className="detail-icon icon-map-pin"></span><span>Campus Housing</span></div>
+                                    <div className="detail-item">
+                                        <GraduationCap className="detail-icon" size={20} />
+                                        <span>Computer Science</span>
+                                    </div>
+                                    <div className="detail-item">
+                                        <Calendar className="detail-icon" size={20} />
+                                        <span>Class of 2026</span>
+                                    </div>
+                                    <div className="detail-item">
+                                        <MapPin className="detail-icon" size={20} />
+                                        <span>Campus Housing</span>
+                                    </div>
                                 </div>
                             </div>
 
                             <div className="badges-card">
                                 <h3>Badges</h3>
                                 <div className="badges-grid">
-                                    <div className="badge icon-crown" title="100 Posts"></div>
-                                    <div className="badge icon-star" title="Active Member"></div>
-                                    <div className="badge icon-heart-handshake" title="Helpful"></div>
-                                    <div className="badge icon-rocket" title="Early Adopter"></div>
+                                    <div className="badge" title="100 Posts">
+                                        <Crown size={24} />
+                                    </div>
+                                    <div className="badge" title="Active Member">
+                                        <Star size={24} />
+                                    </div>
+                                    <div className="badge" title="Helpful">
+                                        <HeartHandshake size={24} />
+                                    </div>
+                                    <div className="badge" title="Early Adopter">
+                                        <Rocket size={24} />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -136,7 +154,7 @@ export default function Profile() {
                                             <span className="activity-time">1 day ago</span>
                                         </div>
                                         <a href="#" className="thread-link">Looking for project partners - Web Dev</a>
-                                        <p>Anyone interested in building a full-stack web application for a className project?</p>
+                                        <p>Anyone interested in building a full-stack web application for a class project?</p>
                                         <div className="activity-footer"><span className="activity-stats">8 likes • 12 replies</span></div>
                                     </div>
                                 </div>
