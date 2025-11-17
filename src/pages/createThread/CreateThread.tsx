@@ -5,6 +5,7 @@ import Header from "../../components/header";
 import Footer from "../../components/footer";
 import '../../styles/createThread.css';
 import type { Thread } from "../../types/types";
+import { SendHorizontal, X } from 'lucide-react';
 
 type CategoryGroup = {
     label: string;
@@ -186,13 +187,15 @@ export default function CreateThread() {
                                 className="btn btn-secondary"
                                 onClick={handleCancel}
                             >
-                                Cancel
+                                <X />
+
                             </button>
                             <button
                                 type="submit"
                                 className="btn btn-primary"
                             >
-                                Post
+                                <SendHorizontal />
+
                             </button>
                         </div>
                     </form>

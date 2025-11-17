@@ -62,16 +62,19 @@
     color: rgba(255, 255, 255, 0.7);
 }
 
+.about-card-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
 .edit-profile-btn {
-    padding: 0.75rem 1.5rem;
-    background: rgba(256, 256, 256, 0.2);
     color: var(--white);
-    border: 2px solid white;
-    border-radius: 10px;
-    font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s, opacity 0.3s;
+    border-radius: 10px;
     font-size: 15px;
+    font-weight: 600;
+    transition: transform .2s,opacity .3s;
 }
 
 .edit-profile-btn:hover {

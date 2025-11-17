@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from 'react-router-dom';
-import { MessageSquare, Eye } from 'lucide-react';
+import { MessageSquare, Eye, Plus } from 'lucide-react';
 import Header from "../../components/header";
 import Footer from "../../components/footer";
 import '../../styles/threads.css';
@@ -193,7 +193,7 @@ export default function Threads() {
               <h1>Recent Threads</h1>
               <p>Latest discussions from the community</p>
             </div>
-            <button onClick={handleNewThread} className="new-thread-btn">+ New Thread</button>
+            <button onClick={handleNewThread} className="new-thread-btn"><Plus /></button>
           </div>
 
           <div className="filter-bar">
