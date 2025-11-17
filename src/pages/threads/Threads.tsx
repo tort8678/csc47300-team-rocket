@@ -170,7 +170,7 @@ export default function Threads() {
   };
 
   const handleNewThread = () => {
-    navigate('/create');
+    navigate('/thread/new');
   };
 
   const getCategoryLabel = (categoryValue: string) => {

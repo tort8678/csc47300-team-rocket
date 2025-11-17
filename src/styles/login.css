@@ -40,6 +40,12 @@
     font-family: unset;
 }
 
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 .auth-form input:focus {
     background: rgba(0, 0, 0, 0.7);
 }

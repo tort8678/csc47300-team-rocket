@@ -36,7 +36,7 @@ const router = createBrowserRouter([
     element: <Register />
   },
   {
-    path: "/Create",
+    path: "/Thread/New",
     element: <CreateThread />
   },
 

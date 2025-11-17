@@ -271,132 +271,131 @@ export default function Profile() {
                             ) : (
                                 <div className="about-card">
                                     <div className="about-card-header">
-                                    <h3> About</h3>
-                                <button
-                                className="edit-profile-btn"
-                                onClick={() => setIsEditing(!isEditing)}
-                        ><SquarePen/>
-                        </button>
-                    </div>
-                    <p>{user.bio || 'No bio added yet. Click "Edit Profile" to add one!'}</p>
-                    <div className="about-details">
-                        {user.major && (
-                            <div className="detail-item">
-                                <GraduationCap className="detail-icon" size={20}/>
-                                <span>{user.major}</span>
-                            </div>
-                        )}
-                        {user.classYear && (
-                            <div className="detail-item">
-                                <Calendar className="detail-icon" size={20}/>
-                                <span>{user.classYear}</span>
-                            </div>
-                        )}
-                        {user.location && (
-                            <div className="detail-item">
-                                <MapPin className="detail-icon" size={20}/>
-                                <span>{user.location}</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-                )}
+                                        <h3>About</h3>
+                                        <button
+                                            className="edit-profile-btn"
+                                            onClick={() => setIsEditing(!isEditing)}
+                                        ><SquarePen/>
+                                        </button>
+                                    </div>
+                                    <p>{user.bio || 'No bio added yet. Click "Edit Profile" to add one!'}</p>
+                                    <div className="about-details">
+                                        {user.major && (
+                                            <div className="detail-item">
+                                                <GraduationCap className="detail-icon" size={20}/>
+                                                <span>{user.major}</span>
+                                            </div>
+                                        )}
+                                        {user.classYear && (
+                                            <div className="detail-item">
+                                                <Calendar className="detail-icon" size={20}/>
+                                                <span>{user.classYear}</span>
+                                            </div>
+                                        )}
+                                        {user.location && (
+                                            <div className="detail-item">
+                                                <MapPin className="detail-icon" size={20}/>
+                                                <span>{user.location}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
-                <div className="badges-card">
-                    <h3>Badges</h3>
-                    <div className="badges-grid">
-                        {totalThreads >= 10 && (
-                            <div className="badge" title="10+ Threads">
-                                <Crown size={40}/>
-                            </div>
-                        )}
-                        {totalThreads >= 1 && (
-                            <div className="badge" title="Active Member">
-                                <Star size={40}/>
-                            </div>
-                        )}
-                        {totalPosts >= 5 && (
-                            <div className="badge" title="Helpful">
-                                <HeartHandshake size={40}/>
-                            </div>
-                        )}
-                        <div className="badge" title="Early Adopter">
-                            <Rocket size={40}/>
-                        </div>
-                    </div>
-                </div>
-        </div>
-
-    <div className="profile-main">
-        <div className="activity-tabs">
-            <button className="tab-btn active">My Threads</button>
-        </div>
-
-        <div className="activity-content">
-            {displayedThreads.length === 0 ? (
-                <div className="empty-message" style={{textAlign: 'center', padding: '2rem', color: '#666'}}>
-                    No threads yet. <Link to="/createThread" style={{color: '#4CAF50'}}>Create your first thread!</Link>
-                </div>
-            ) : (
-                <div className="threads-list">
-                    {displayedThreads.map((thread) => (
-                        <div key={thread.id} className="thread-item">
-                            <div className="thread-main">
-                                <div className="thread-avatar">{initials}</div>
-                                <div className="thread-content">
-                                    <h3>
-                                        <Link
-                                            to={`/thread/${encodeURIComponent(thread.id.split("_")[1])}`}>{thread.title}</Link>
-                                    </h3>
-                                    <p className="thread-preview">
-                                        {thread.content.substring(0, 150)}{thread.content.length > 150 ? '...' : ''}
-                                    </p>
-                                    <div className="thread-meta">
-                                        <span className="thread-author">{thread.author}</span>
-                                        <span className="thread-category">{getCategoryLabel(thread.category)}</span>
-                                        <span className="thread-time">{getTimeAgo(thread.createdAt)}</span>
+                            <div className="badges-card">
+                                <h3>Badges</h3>
+                                <div className="badges-grid">
+                                    {totalThreads >= 10 && (
+                                        <div className="badge" title="10+ Threads">
+                                            <Crown size={40}/>
+                                        </div>
+                                    )}
+                                    {totalThreads >= 1 && (
+                                        <div className="badge" title="Active Member">
+                                            <Star size={40}/>
+                                        </div>
+                                    )}
+                                    {totalPosts >= 5 && (
+                                        <div className="badge" title="Helpful">
+                                            <HeartHandshake size={40}/>
+                                        </div>
+                                    )}
+                                    <div className="badge" title="Early Adopter">
+                                        <Rocket size={40}/>
                                     </div>
                                 </div>
                             </div>
-                            <div className="thread-stats">
-                                <div className="stat">
-                                    <MessageSquare size={20}/>
-                                    <span className="stat-count">{thread.replies || 0}</span>
-                                </div>
-                                <div className="stat">
-                                    <Eye size={20}/>
-                                    <span className="stat-count">{thread.views || 0}</span>
-                                </div>
-                            </div>
                         </div>
-                    ))}
+
+                        <div className="profile-main">
+                            <div className="activity-tabs">
+                                <button className="tab-btn active">My Threads</button>
+                            </div>
+
+                            <div className="activity-content">
+                                {displayedThreads.length === 0 ? (
+                                    <div className="empty-message" style={{textAlign: 'center', padding: '2rem', color: '#ffffffb3'}}>
+                                        No threads yet. <Link to="/thread/new" style={{color: '#fdcffa', textDecoration: 'none'}}>Create your first thread!</Link>
+                                    </div>
+                                ) : (
+                                    <div className="threads-list">
+                                        {displayedThreads.map((thread) => (
+                                            <div key={thread.id} className="thread-item">
+                                                <div className="thread-main">
+                                                    <div className="thread-avatar">{initials}</div>
+                                                    <div className="thread-content">
+                                                        <h3>
+                                                            <Link
+                                                                to={`/thread/${encodeURIComponent(thread.id.split("_")[1])}`}>{thread.title}</Link>
+                                                        </h3>
+                                                        <p className="thread-preview">
+                                                            {thread.content.substring(0, 150)}{thread.content.length > 150 ? '...' : ''}
+                                                        </p>
+                                                        <div className="thread-meta">
+                                                            <span className="thread-author">{thread.author}</span>
+                                                            <span className="thread-category">{getCategoryLabel(thread.category)}</span>
+                                                            <span className="thread-time">{getTimeAgo(thread.createdAt)}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="thread-stats">
+                                                    <div className="stat">
+                                                        <MessageSquare size={20}/>
+                                                        <span className="stat-count">{thread.replies || 0}</span>
+                                                    </div>
+                                                    <div className="stat">
+                                                        <Eye size={20}/>
+                                                        <span className="stat-count">{thread.views || 0}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Show Load More button only if there are more than 5 threads and not all are displayed */}
+                            {userThreads.length > 5 && displayedThreads.length < userThreads.length && (
+                                <div className="load-more">
+                                    <button className="load-more-btn" onClick={handleLoadMore}>
+                                        Load More ({userThreads.length - displayedThreads.length} remaining)
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Show "All threads loaded" only if there were more than 5 threads initially and now all are displayed */}
+                            {userThreads.length > 5 && displayedThreads.length === userThreads.length && (
+                                <div className="load-more">
+                                    <button className="load-more-btn" disabled style={{opacity: 0.5, cursor: 'not-allowed'}}>
+                                        All threads loaded
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
-            )}
+            </main>
+            <Footer/>
         </div>
-
-        {/* Show Load More button only if there are more than 5 threads and not all are displayed */}
-        {userThreads.length > 5 && displayedThreads.length < userThreads.length && (
-            <div className="load-more">
-                <button className="load-more-btn" onClick={handleLoadMore}>
-                    Load More ({userThreads.length - displayedThreads.length} remaining)
-                </button>
-            </div>
-        )}
-
-        {/* Show "All threads loaded" only if there were more than 5 threads initially and now all are displayed */}
-        {userThreads.length > 5 && displayedThreads.length === userThreads.length && (
-            <div className="load-more">
-                <button className="load-more-btn" disabled style={{opacity: 0.5, cursor: 'not-allowed'}}>
-                    All threads loaded
-                </button>
-            </div>
-        )}
-    </div>
-</div>
-</div>
-</main>
-    <Footer/>
-</div>
-)
-    ;
+    );
 }
