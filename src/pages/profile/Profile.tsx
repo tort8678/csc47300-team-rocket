@@ -1,11 +1,24 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { GraduationCap, Calendar, MapPin, Crown, Star, HeartHandshake, Rocket, MessageSquare, Eye } from 'lucide-react';
+import {useEffect, useState} from 'react';
+import {useNavigate, Link} from 'react-router-dom';
+import {
+    GraduationCap,
+    Calendar,
+    MapPin,
+    Crown,
+    Star,
+    HeartHandshake,
+    Rocket,
+    MessageSquare,
+    Eye,
+    Check,
+    X,
+    SquarePen
+} from 'lucide-react';
 import Header from "../../components/header";
 import Footer from "../../components/footer";
 import '../../styles/main.css';
 import '../../styles/profile.css';
-import type { User, Thread } from '../../types/types';
+import type {User, Thread} from '../../types/types';
 
 interface UserProfile extends User {
     bio?: string;
@@ -163,7 +176,7 @@ export default function Profile() {
 
     return (
         <div>
-            <Header />
+            <Header/>
             <main className="container">
                 <div className="profile-container">
                     <div className="profile-header">
@@ -175,12 +188,6 @@ export default function Profile() {
                                 <p className="user-title">{user.major || 'Student'}</p>
                                 <p className="join-date">Member since {joinDate}</p>
                             </div>
-                            <button
-                                className="edit-profile-btn"
-                                onClick={() => setIsEditing(!isEditing)}
-                            >
-                                {isEditing ? 'Cancel' : 'Edit Profile'}
-                            </button>
                         </div>
                     </div>
 
@@ -209,12 +216,12 @@ export default function Profile() {
                             {isEditing ? (
                                 <div className="about-card">
                                     <h3>Edit Profile</h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                    <div style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
                                         <div className="form-group">
                                             <label>Bio</label>
                                             <textarea
                                                 value={editForm.bio}
-                                                onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                                                onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
                                                 placeholder="Tell us about yourself..."
                                             />
                                         </div>
@@ -223,7 +230,7 @@ export default function Profile() {
                                             <input
                                                 type="text"
                                                 value={editForm.major}
-                                                onChange={(e) => setEditForm({ ...editForm, major: e.target.value })}
+                                                onChange={(e) => setEditForm({...editForm, major: e.target.value})}
                                                 placeholder="e.g., Computer Science"
                                             />
                                         </div>
@@ -232,7 +239,7 @@ export default function Profile() {
                                             <input
                                                 type="text"
                                                 value={editForm.classYear}
-                                                onChange={(e) => setEditForm({ ...editForm, classYear: e.target.value })}
+                                                onChange={(e) => setEditForm({...editForm, classYear: e.target.value})}
                                                 placeholder="e.g., Class of 2026"
                                             />
                                         </div>
@@ -241,7 +248,7 @@ export default function Profile() {
                                             <input
                                                 type="text"
                                                 value={editForm.location}
-                                                onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                                                onChange={(e) => setEditForm({...editForm, location: e.target.value})}
                                                 placeholder="e.g., Campus Housing"
                                             />
                                         </div>
@@ -250,37 +257,44 @@ export default function Profile() {
                                                 onClick={handleCancelEdit}
                                                 className="btn btn-secondary"
                                             >
-                                                Cancel
+                                                <X/>
                                             </button>
                                             <button
                                                 onClick={handleSaveProfile}
                                                 className="btn btn-primary"
                                             >
-                                                Save
+                                                <Check/>
                                             </button>
                                         </div>
                                     </div>
                                 </div>
-                            )  : (
+                            ) : (
                                 <div className="about-card">
-                                    <h3>About</h3>
+                                    <div className="about-card-header">
+                                        <h3>About</h3>
+                                        <button
+                                            className="edit-profile-btn"
+                                            onClick={() => setIsEditing(!isEditing)}
+                                        ><SquarePen/>
+                                        </button>
+                                    </div>
                                     <p>{user.bio || 'No bio added yet. Click "Edit Profile" to add one!'}</p>
                                     <div className="about-details">
                                         {user.major && (
                                             <div className="detail-item">
-                                                <GraduationCap className="detail-icon" size={20} />
+                                                <GraduationCap className="detail-icon" size={20}/>
                                                 <span>{user.major}</span>
                                             </div>
                                         )}
                                         {user.classYear && (
                                             <div className="detail-item">
-                                                <Calendar className="detail-icon" size={20} />
+                                                <Calendar className="detail-icon" size={20}/>
                                                 <span>{user.classYear}</span>
                                             </div>
                                         )}
                                         {user.location && (
                                             <div className="detail-item">
-                                                <MapPin className="detail-icon" size={20} />
+                                                <MapPin className="detail-icon" size={20}/>
                                                 <span>{user.location}</span>
                                             </div>
                                         )}
@@ -293,21 +307,21 @@ export default function Profile() {
                                 <div className="badges-grid">
                                     {totalThreads >= 10 && (
                                         <div className="badge" title="10+ Threads">
-                                            <Crown size={40} />
+                                            <Crown size={40}/>
                                         </div>
                                     )}
                                     {totalThreads >= 1 && (
                                         <div className="badge" title="Active Member">
-                                            <Star size={40} />
+                                            <Star size={40}/>
                                         </div>
                                     )}
                                     {totalPosts >= 5 && (
                                         <div className="badge" title="Helpful">
-                                            <HeartHandshake size={40} />
+                                            <HeartHandshake size={40}/>
                                         </div>
                                     )}
                                     <div className="badge" title="Early Adopter">
-                                        <Rocket size={40} />
+                                        <Rocket size={40}/>
                                     </div>
                                 </div>
                             </div>
@@ -320,8 +334,8 @@ export default function Profile() {
 
                             <div className="activity-content">
                                 {displayedThreads.length === 0 ? (
-                                    <div className="empty-message" style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-                                        No threads yet. <Link to="/create" style={{ color: '#4CAF50' }}>Create your first thread!</Link>
+                                    <div className="empty-message" style={{textAlign: 'center', padding: '2rem', color: '#ffffffb3'}}>
+                                        No threads yet. <Link to="/thread/new" style={{color: '#fdcffa', textDecoration: 'none'}}>Create your first thread!</Link>
                                     </div>
                                 ) : (
                                     <div className="threads-list">
@@ -331,7 +345,8 @@ export default function Profile() {
                                                     <div className="thread-avatar">{initials}</div>
                                                     <div className="thread-content">
                                                         <h3>
-                                                            <Link to={`/thread/${encodeURIComponent(thread.id.split("_")[1])}`}>{thread.title}</Link>
+                                                            <Link
+                                                                to={`/thread/${encodeURIComponent(thread.id.split("_")[1])}`}>{thread.title}</Link>
                                                         </h3>
                                                         <p className="thread-preview">
                                                             {thread.content.substring(0, 150)}{thread.content.length > 150 ? '...' : ''}
@@ -345,11 +360,11 @@ export default function Profile() {
                                                 </div>
                                                 <div className="thread-stats">
                                                     <div className="stat">
-                                                        <MessageSquare size={20} />
+                                                        <MessageSquare size={20}/>
                                                         <span className="stat-count">{thread.replies || 0}</span>
                                                     </div>
                                                     <div className="stat">
-                                                        <Eye size={20} />
+                                                        <Eye size={20}/>
                                                         <span className="stat-count">{thread.views || 0}</span>
                                                     </div>
                                                 </div>
@@ -371,7 +386,7 @@ export default function Profile() {
                             {/* Show "All threads loaded" only if there were more than 5 threads initially and now all are displayed */}
                             {userThreads.length > 5 && displayedThreads.length === userThreads.length && (
                                 <div className="load-more">
-                                    <button className="load-more-btn" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>
+                                    <button className="load-more-btn" disabled style={{opacity: 0.5, cursor: 'not-allowed'}}>
                                         All threads loaded
                                     </button>
                                 </div>
@@ -380,7 +395,7 @@ export default function Profile() {
                     </div>
                 </div>
             </main>
-            <Footer />
+            <Footer/>
         </div>
     );
 }

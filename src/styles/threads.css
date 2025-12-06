@@ -22,16 +22,17 @@
 }
 
 .new-thread-btn {
-    background: rgba(256,256,256,0.2);
     color: var(--white);
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    border-radius: 10px;
     cursor: pointer;
-    transition: transform 0.2s, opacity 0.3s;
-    border: 2px solid white;
-    text-decoration: none;
+    background: #fff3;
+    border: 2px solid #fff;
+    border-radius: 10px;
+    height: 50px;
+    width: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
 }
 
 .new-thread-btn:hover {
