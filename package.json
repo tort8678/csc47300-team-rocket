@@ -7,16 +7,22 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "backend": "nodemon --exec npx tsx ./server/index.ts"
   },
   "dependencies": {
+    "express": "^5.2.1",
     "lucide-react": "^0.552.0",
+    "mongoose": "^9.0.1",
+    "nodemon": "^3.1.11",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-router-dom": "^7.9.5"
+    "react-router-dom": "^7.9.5",
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
+    "@types/express": "^5.0.6",
     "@types/node": "^24.6.0",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
