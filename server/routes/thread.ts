@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { ThreadController } from '../controllers/thread.js';
-import { authenticate, optionalAuthenticate, authorize } from '../middleware/auth.js';
-import { upload } from '../middleware/upload.js';
-import { UserRole } from '../types/index.js';
-import { getFileFromGridFS, getFileInfoFromGridFS } from '../services/gridfs.js';
+import { ThreadController } from '../controllers/thread.ts';
+import { authenticate, optionalAuthenticate, authorize } from '../middleware/auth.ts';
+import { upload } from '../middleware/upload.ts';
+import { UserRole } from '../types/index.ts';
+import { getFileFromGridFS, getFileInfoFromGridFS } from '../services/gridfs.ts';
 
 const router = Router();
 

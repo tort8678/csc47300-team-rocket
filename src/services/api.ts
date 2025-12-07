@@ -14,7 +14,7 @@ import type {
   CreateCommentRequest,
   UpdateCommentRequest,
   PaginatedApiResponse
-} from '../types/api.types.js';
+} from '../types/api.types.ts';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 

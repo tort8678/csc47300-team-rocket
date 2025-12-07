@@ -206,6 +206,7 @@ export default function CustomSelect({
             aria-selected={value === option.value}
           >
             {option.label}
+            {value === option.value && <Check size={18} />}
           </li>
         ))}
         {/* Render option groups */}
@@ -232,7 +233,7 @@ export default function CustomSelect({
                       aria-selected={value === option.value}
                     >
                       {option.label}
-                      {value === option.value ? <Check size={18} /> : ''}
+                      {value === option.value && <Check size={18} />}
                     </li>
                   );
                 })}

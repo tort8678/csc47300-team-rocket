@@ -4,12 +4,12 @@ dotenv.config();
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import userRoutes from './routes/user.js';
-import authRoutes from './routes/auth.js';
-import threadRoutes from './routes/thread.js';
-import commentRoutes from './routes/comment.js';
-import { errorHandler } from './middleware/error.js';
-import { initGridFS } from './services/gridfs.js';
+import userRoutes from './routes/user.ts';
+import authRoutes from './routes/auth.ts';
+import threadRoutes from './routes/thread.ts';
+import commentRoutes from './routes/comment.ts';
+import { errorHandler } from './middleware/error.ts';
+import { initGridFS } from './services/gridfs.ts';
 
 (async function() {
    try {

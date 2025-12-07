@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import User from '../database/userModel.js';
-import { AuthRequest, JWTPayload, UserRole } from '../types/index.js';
-import { generateToken } from '../middleware/auth.js';
+import User from '../database/userModel.ts';
+import { AuthRequest, JWTPayload, UserRole } from '../types/index.ts';
+import { generateToken } from '../middleware/auth.ts';
 
 // Validation schemas
 const registerSchema = z.object({

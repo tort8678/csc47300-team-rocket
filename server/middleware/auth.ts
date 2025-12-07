@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { AuthRequest, JWTPayload, ApiResponse, UserRole } from '../types/index.js';
+import { AuthRequest, JWTPayload, ApiResponse, UserRole } from '../types/index.ts';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 

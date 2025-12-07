@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from "mongoose";
 import bcrypt from 'bcryptjs';
-import { UserRole } from '../types/index.js';
+import { UserRole } from '../types/index.ts';
 
 export interface UserI extends Document {
     _id: mongoose.Types.ObjectId;

@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import ThreadModel, { ThreadStatus } from '../database/threadModel.js';
-import CommentModel from '../database/commentModel.js';
-import UserModel from '../database/userModel.js';
-import { AuthRequest, UserRole } from '../types/index.js';
-import { uploadFileToGridFS, getFileFromGridFS, getFileInfoFromGridFS } from '../services/gridfs.js';
+import ThreadModel, { ThreadStatus } from '../database/threadModel.ts';
+import CommentModel from '../database/commentModel.ts';
+import UserModel from '../database/userModel.ts';
+import { AuthRequest, UserRole } from '../types/index.ts';
+import { uploadFileToGridFS, getFileFromGridFS, getFileInfoFromGridFS } from '../services/gridfs.ts';
 
 // Validation schemas
 const createThreadSchema = z.object({
@@ -497,7 +497,7 @@ export class ThreadController {
         thread.attachments = existingAttachments.filter((id: string) => !deletedAttachments.includes(id));
         
         // Delete files from GridFS
-        const { deleteFileFromGridFS } = await import('../services/gridfs.js');
+        const { deleteFileFromGridFS } = await import('../services/gridfs.ts');
         for (const fileId of deletedAttachments) {
           try {
             await deleteFileFromGridFS(fileId);

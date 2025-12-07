@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import CommentModel from '../database/commentModel.js';
-import ThreadModel, { ThreadStatus } from '../database/threadModel.js';
-import { AuthRequest, UserRole } from '../types/index.js';
+import CommentModel from '../database/commentModel.ts';
+import ThreadModel, { ThreadStatus } from '../database/threadModel.ts';
+import { AuthRequest, UserRole } from '../types/index.ts';
 
 // Validation schemas
 const createCommentSchema = z.object({
