@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import Footer from "../../components/footer";
 import Header from "../../components/header";
+import apiService from "../../services/api";
 import '../../styles/main.css';
 import '../../styles/login.css';
 
@@ -12,40 +13,40 @@ export default function Login() {
         username: '',
         password: ''
     });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const loggedInUser = localStorage.getItem('loggedInUser');
-        if (loggedInUser) {
-            alert('You are already logged in.');
+        document.title = 'Login - DamIt';
+        const token = localStorage.getItem('token');
+        if (token) {
+            // User is already logged in
             navigate("/");
         }
     }, [navigate]);
 
-    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setLoading(true);
+        setError(null);
         
         try {
-            // Check if user exists
-            const user = localStorage.getItem(formData.username);
-            if (!user) {
-                alert('User not found.');
-                return;
-            }
+            const response = await apiService.login({
+                username: formData.username,
+                password: formData.password
+            });
 
-            const userData = JSON.parse(user);
-            // Check password
-            if (userData.password !== formData.password) {
-                alert('Incorrect password.');
-                return;
+            if (response.success) {
+                alert('Login successful!');
+                navigate("/");
+            } else {
+                setError(response.message || 'Login failed. Please try again.');
             }
-
-            // Login successful
-            localStorage.setItem('loggedInUser', formData.username);
-            alert('Login successful!');
-            navigate("/");
-        } catch (error) {
+        } catch (error: any) {
             console.error('Login error:', error);
-            alert('An error occurred during login. Please try again.');
+            setError(error.response?.data?.message || 'An error occurred during login. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -66,6 +67,19 @@ export default function Login() {
                         <h2>Welcome back</h2>
                         <p className="muted">Sign in to start posting and join discussions.</p>
 
+                        {error && (
+                            <div style={{ 
+                                padding: '0.75rem', 
+                                background: 'rgba(255, 0, 0, 0.1)', 
+                                border: '1px solid rgba(255, 0, 0, 0.3)',
+                                borderRadius: '8px',
+                                marginBottom: '1rem',
+                                color: '#ff6b6b'
+                            }}>
+                                {error}
+                            </div>
+                        )}
+
                         <form className="auth-form" onSubmit={handleSubmit}>
                             <label htmlFor="username">Username</label>
                             <input 
@@ -76,6 +90,7 @@ export default function Login() {
                                 required 
                                 value={formData.username}
                                 onChange={handleInputChange}
+                                disabled={loading}
                             />
 
                             <label htmlFor="password">Password</label>
@@ -87,14 +102,16 @@ export default function Login() {
                                 required 
                                 value={formData.password}
                                 onChange={handleInputChange}
+                                disabled={loading}
                             />
 
                             <div className="auth-actions">
                                 <button 
                                     type="submit" 
                                     className="btn btn-primary btn-block"
+                                    disabled={loading}
                                 >
-                                    Sign In
+                                    {loading ? 'Signing in...' : 'Sign In'}
                                 </button>
                                 <span className="muted">
                                     No account? {' '}
@@ -114,5 +131,3 @@ export default function Login() {
         </div>
     );
 }
-
-

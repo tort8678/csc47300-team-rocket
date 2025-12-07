@@ -155,10 +155,13 @@ nav a.active, nav li:hover {
     box-shadow: var(--box-shadow);
     transition: transform 0.3s, background 0.3s;
     cursor: pointer;
+    text-decoration: none;
+    display: block;
+    color: inherit;
 }
 
 .category-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-3px);
     background: rgba(0,0,0,0.5);
 }
 

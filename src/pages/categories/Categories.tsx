@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Library, PartyPopper, Briefcase, Gamepad2, MessageSquare } from 'lucide-react';
 import '../../styles/categories.css';
 import Header from "../../components/header";
 import Footer from "../../components/footer";
-import type { Thread } from '../../types/types';
+import apiService from '../../services/api';
+import type { Thread } from '../../types/api.types';
 
 interface CategoryOption {
   value: string;
@@ -17,6 +19,7 @@ interface CategoryGroup {
 
 const Categories: React.FC = () => {
   const [categoryData, setCategoryData] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(true);
 
   const categoryGroups: CategoryGroup[] = [
     {
@@ -78,47 +81,66 @@ const Categories: React.FC = () => {
   };
 
   useEffect(() => {
-    // Load all threads from localStorage
-    const threads: Thread[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key) continue;
-      if (key.startsWith('thread_')) {
-        try {
-          const t = JSON.parse(localStorage.getItem(key) as string) as Thread;
-          if (t) threads.push(t);
-        } catch (e) {
-          // ignore malformed entries
-        }
-      }
-    }
-
-    // Calculate stats per category (using value, not label)
-    const stats: Record<string, any> = {};
-    threads.forEach(thread => {
-      const cat = thread.category || 'general-discussion';
-      if (!stats[cat]) {
-        stats[cat] = {
-          threads: 0,
-          posts: 0,
-          latestThread: null
-        };
-      }
-      stats[cat].threads++;
-      stats[cat].posts += 1 + (thread.replies || 0);
-
-      // Update latest thread
-      if (!stats[cat].latestThread || new Date(thread.createdAt) > new Date(stats[cat].latestThread.createdAt)) {
-        stats[cat].latestThread = {
-          title: thread.title,
-          author: thread.author || 'Anonymous',
-          createdAt: thread.createdAt
-        };
-      }
-    });
-
-    setCategoryData(stats);
+    document.title = 'Categories - DamIt';
+    loadCategoryData();
   }, []);
+
+  const loadCategoryData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch stats and threads for each category
+      const [statsResponse, allThreadsResponse] = await Promise.all([
+        apiService.getPublicStats(),
+        apiService.getThreads({ page: 1, limit: 1000, sort: 'recent' })
+      ]);
+
+      const stats: Record<string, any> = {};
+
+      if (statsResponse.success && statsResponse.data) {
+        // Initialize stats from public stats
+        Object.keys(statsResponse.data.categories || {}).forEach(cat => {
+          stats[cat] = {
+            threads: statsResponse.data?.categories[cat].threads ?? 0,
+            posts: statsResponse.data?.categories[cat].posts ?? 0,
+            latestThread: null
+          };
+        });
+      }
+
+      // Get latest thread for each category
+      if (allThreadsResponse.success && allThreadsResponse.data) {
+        const threads = allThreadsResponse.data;
+        
+        threads.forEach((thread: Thread) => {
+          const cat = thread.category || 'general-discussion';
+          if (!stats[cat]) {
+            stats[cat] = {
+              threads: 0,
+              posts: 0,
+              latestThread: null
+            };
+          }
+          
+          // Update latest thread
+          if (!stats[cat].latestThread || new Date(thread.createdAt) > new Date(stats[cat].latestThread.createdAt)) {
+            stats[cat].latestThread = {
+              id: thread.id,
+              title: thread.title,
+              author: typeof thread.author === 'object' ? thread.author.username : thread.author || 'Anonymous',
+              createdAt: thread.createdAt
+            };
+          }
+        });
+      }
+
+      setCategoryData(stats);
+    } catch (error) {
+      console.error('Error loading category data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getTimeAgo = (date: string | Date) => {
     const now = new Date();
@@ -156,6 +178,20 @@ const Categories: React.FC = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div>
+        <Header />
+        <main className="container">
+          <div style={{ textAlign: 'center', padding: '2rem', color: '#ffffffb3' }}>
+            Loading categories...
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
       <div>
         <Header />
@@ -174,9 +210,13 @@ const Categories: React.FC = () => {
                     {group.options.map((option) => {
                       const stats = getCategoryStats(option.value);
                       return (
-                          <div key={option.value} className="category-item">
+                        <Link 
+                        to={`/threads?category=${option.value}`}
+                        style={{ color: 'inherit', textDecoration: 'none' }} key={option.value} className="category-item">
                             <div className="category-info">
-                              <h3>{option.label}</h3>
+                              <h3>
+                              {option.label}
+                              </h3>
                               <p>{categoryDescriptions[option.value]}</p>
                             </div>
                             <div className="category-stats">
@@ -192,7 +232,9 @@ const Categories: React.FC = () => {
                             {stats.latestThread ? (
                                 <div className="latest-post">
                                   <span className="latest-label">Latest:</span>
-                                  <span className="latest-thread">{stats.latestThread.title}</span>
+                                  <Link to={`/thread/${stats.latestThread.id}`} className="latest-thread">
+                                    {stats.latestThread.title}
+                                  </Link>
                                   <span className="latest-user">by {stats.latestThread.author}</span>
                                   <span className="latest-time">{getTimeAgo(stats.latestThread.createdAt)}</span>
                                 </div>
@@ -201,7 +243,7 @@ const Categories: React.FC = () => {
                                   <span className="latest-label">No threads yet</span>
                                 </div>
                             )}
-                          </div>
+                        </Link>
                       );
                     })}
                   </div>

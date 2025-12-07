@@ -8,6 +8,8 @@ import Register from './pages/register/Register';
 import Profile from './pages/profile/Profile';
 import Threads from './pages/threads/Threads';
 import CreateThread from './pages/createThread/CreateThread';
+import Thread from './pages/thread/Thread';
+import AdminDashboard from './pages/adminDashboard/dashboard';
 
 
 const router = createBrowserRouter([
@@ -16,30 +18,49 @@ const router = createBrowserRouter([
     element: <Home />,
   },
   {
-    path: "/Categories",
+    path: "/categories",
     element: <Categories />
   },
   {
-    path: "/Threads",
+    path: "/threads",
     element: <Threads />
   },
   {
-    path: "/Profile",
+    path: "/thread/:threadId",
+    element: <Thread />
+  },
+  {
+    path: "/profile",
     element: <Profile />
   },
   {
-    path: "/Login",
+    path: "/profile/:username",
+    element: <Profile />
+  },
+  {
+    path: "/login",
     element: <Login />
   },
   {
-    path: "/Register",
+    path: "/register",
     element: <Register />
   },
   {
-    path: "/Thread/New",
+    path: "/thread/new",
     element: <CreateThread />
   },
-
+  {
+    path: "/thread/:threadId/edit",
+    element: <CreateThread />
+  },
+  {
+    path: "/admin",
+    element: <AdminDashboard />
+  },
+  {
+    path: "/admin/dashboard",
+    element: <AdminDashboard />
+  },
 ]);
 
 createRoot(document.getElementById('root')!).render(

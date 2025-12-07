@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react';
-import {useNavigate, Link} from 'react-router-dom';
+import {useNavigate, Link, useParams} from 'react-router-dom';
 import {
     GraduationCap,
     Calendar,
@@ -8,19 +8,21 @@ import {
     Star,
     HeartHandshake,
     Rocket,
-    MessageSquare,
-    Eye,
     Check,
     X,
-    SquarePen
+    SquarePen,
+    Heart
 } from 'lucide-react';
 import Header from "../../components/header";
 import Footer from "../../components/footer";
+import ThreadItem from "../../components/threadItem";
+import apiService from "../../services/api";
 import '../../styles/main.css';
 import '../../styles/profile.css';
-import type {User, Thread} from '../../types/types';
+import type {Thread} from '../../types/api.types';
+import type {User as ApiUser} from '../../types/api.types';
 
-interface UserProfile extends User {
+interface UserProfile extends ApiUser {
     bio?: string;
     major?: string;
     classYear?: string;
@@ -29,10 +31,16 @@ interface UserProfile extends User {
 
 export default function Profile() {
     const navigate = useNavigate();
+    const { username } = useParams<{ username?: string }>();
+    const isOwnProfile = !username || (localStorage.getItem('user') && username === JSON.parse(localStorage.getItem('user') || '{}').username);
     const [user, setUser] = useState<UserProfile | null>(null);
     const [userThreads, setUserThreads] = useState<Thread[]>([]);
+    const [userComments, setUserComments] = useState<any[]>([]);
     const [displayedThreads, setDisplayedThreads] = useState<Thread[]>([]);
+    const [displayedComments, setDisplayedComments] = useState<any[]>([]);
+    const [activeTab, setActiveTab] = useState<'threads' | 'comments'>('threads');
     const [isEditing, setIsEditing] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [editForm, setEditForm] = useState({
         bio: '',
         major: '',
@@ -41,68 +49,242 @@ export default function Profile() {
     });
 
     useEffect(() => {
-        const loggedInUsername = localStorage.getItem('loggedInUser');
-        if (!loggedInUsername) {
-            alert('Please log in to view your profile.');
-            navigate('/login');
-            return;
-        }
-
-        // Get user data from localStorage
-        const userData = localStorage.getItem(loggedInUsername);
-        if (userData) {
-            const parsedUser = JSON.parse(userData) as UserProfile;
-            setUser(parsedUser);
-            setEditForm({
-                bio: parsedUser.bio || '',
-                major: parsedUser.major || '',
-                classYear: parsedUser.classYear || '',
-                location: parsedUser.location || ''
-            });
-        }
-
-        // Load user's threads
-        const threads: Thread[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (!key) continue;
-            if (key.startsWith('thread_')) {
-                try {
-                    const t = JSON.parse(localStorage.getItem(key) as string) as Thread;
-                    if (t && t.author === loggedInUsername) {
-                        threads.push(t);
-                    }
-                } catch (e) {
-                    // ignore malformed entries
-                }
+        document.title = username ? `${username}'s Profile - DamIt` : 'Profile - DamIt';
+        
+        if (isOwnProfile) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please log in to view your profile.');
+                navigate('/login');
+                return;
             }
         }
-        threads.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setUserThreads(threads);
 
-        // Initially display only 5 threads
-        setDisplayedThreads(threads.slice(0, 5));
-    }, [navigate]);
+        loadUserProfile();
+    }, [navigate, username, isOwnProfile]);
 
-    const handleLoadMore = () => {
+    const loadUserProfile = async () => {
+        try {
+            setLoading(true);
+            let response;
+            if (isOwnProfile) {
+                response = await apiService.getOwnProfile();
+            } else {
+                if (!username) return;
+                response = await apiService.getUserProfileByUsername(username);
+            }
+            
+            if (response.success && response.data) {
+                const userData = response.data as UserProfile;
+                setUser(userData);
+                setEditForm({
+                    bio: userData.bio || '',
+                    major: userData.major || '',
+                    classYear: userData.classYear || '',
+                    location: userData.location || ''
+                });
+                
+                // Load threads and comments after user is loaded
+                if (isOwnProfile) {
+                    loadUserThreads();
+                    loadUserComments();
+                } else {
+                    // For other users, load after a short delay to ensure user state is set
+                    setTimeout(() => {
+                        loadOtherUserThreads(userData.username);
+                        loadOtherUserComments(userData.username);
+                    }, 100);
+                }
+            } else {
+                alert('Failed to load profile. Please try again.');
+                if (isOwnProfile) {
+                    navigate('/login');
+                } else {
+                    navigate('/threads');
+                }
+            }
+        } catch (error) {
+            console.error('Error loading profile:', error);
+            alert('Failed to load profile. Please try again.');
+            if (isOwnProfile) {
+                navigate('/login');
+            } else {
+                navigate('/threads');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadOtherUserThreads = async (username: string) => {
+        try {
+            console.log('Loading other user threads:', username);
+            if (!username) return;
+            const response = await apiService.getUserThreads(username, 1, 100);
+            console.log('User threads response:', response);
+            if (response.success && response.data && Array.isArray(response.data)) {
+                const threads = response.data.map((thread: any) => ({
+                    id: thread.id,
+                    title: thread.title,
+                    content: thread.content,
+                    author: typeof thread.author === 'object' ? thread.author : thread.author,
+                    category: thread.category,
+                    likes: thread.likes || 0,
+                    replies: thread.replies || 0,
+                    views: thread.views || 0,
+                    status: thread.status,
+                    createdAt: thread.createdAt
+                }));
+                console.log('Setting user threads:', threads);
+                setUserThreads(threads);
+                setDisplayedThreads(threads.slice(0, 5));
+            } else {
+                console.log('No threads found or invalid response:', response);
+            }
+        } catch (error) {
+            console.error('Error loading user threads:', error);
+        }
+    };
+
+    const loadOtherUserComments = async (username: string) => {
+        try {
+            if (!username) return;
+            console.log('Loading other user comments for:', username);
+            const response = await apiService.getUserComments(username, 1, 100);
+            console.log('User comments response:', response);
+            if (response.success && response.data && Array.isArray(response.data)) {
+                console.log('Setting user comments:', response.data);
+                setUserComments(response.data);
+                setDisplayedComments(response.data.slice(0, 5));
+            } else {
+                console.log('No comments found or invalid response:', response);
+                setUserComments([]);
+                setDisplayedComments([]);
+            }
+        } catch (error) {
+            console.error('Error loading user comments:', error);
+            setUserComments([]);
+            setDisplayedComments([]);
+        }
+    };
+
+    const loadUserThreads = async () => {
+        try {
+            if (!user) return;
+            
+            // Get user ID from token or user object
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const userId = payload.userId;
+                
+                // Use getThreads with authorId filter
+                const response = await apiService.getThreads({
+                    page: 1,
+                    limit: 100,
+                    authorId: userId
+                });
+                
+                if (response.success && response.data) {
+                    const threads = response.data.map((thread: any) => ({
+                        id: thread.id,
+                        title: thread.title,
+                        content: thread.content,
+                        author: typeof thread.author === 'object' ? thread.author : thread.author,
+                        category: thread.category,
+                        likes: thread.likes || 0,
+                        replies: thread.replies || 0,
+                        views: thread.views || 0,
+                        status: thread.status,
+                        createdAt: thread.createdAt
+                    }));
+                    setUserThreads(threads);
+                    setDisplayedThreads(threads.slice(0, 5));
+                }
+            } catch (e) {
+                console.error('Error parsing token:', e);
+            }
+        } catch (error) {
+            console.error('Error loading user threads:', error);
+        }
+    };
+
+    const loadUserComments = async () => {
+        try {
+            if (!user) return;
+            
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            
+            try {
+                // Get user by ID to get username
+                const userResponse = await apiService.getOwnProfile();
+                if (userResponse.success && userResponse.data) {
+                    const username = userResponse.data.username;
+                    
+                    const response = await apiService.getUserComments(username, 1, 100);
+                    console.log('Own comments response:', response);
+                    if (response.success && response.data && Array.isArray(response.data)) {
+                        console.log('Setting own comments:', response.data);
+                        setUserComments(response.data);
+                        setDisplayedComments(response.data.slice(0, 5));
+                    } else {
+                        console.log('No comments found or invalid response:', response);
+                        setUserComments([]);
+                        setDisplayedComments([]);
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading comments:', e);
+            }
+        } catch (error) {
+            console.error('Error loading user comments:', error);
+        }
+    };
+
+    // Reload threads and comments when user is loaded (only for own profile)
+    useEffect(() => {
+        if (user && isOwnProfile) {
+            loadUserThreads();
+            loadUserComments();
+        }
+    }, [user, isOwnProfile]);
+
+    const handleLoadMoreThreads = () => {
         // Load all remaining threads
         setDisplayedThreads([...userThreads]);
     };
 
-    const handleSaveProfile = () => {
+    const handleLoadMoreComments = () => {
+        // Load all remaining comments
+        setDisplayedComments([...userComments]);
+    };
+
+    const handleSaveProfile = async () => {
         if (!user) return;
 
-        const updatedUser: UserProfile = {
-            ...user,
-            bio: editForm.bio,
-            major: editForm.major,
-            classYear: editForm.classYear,
-            location: editForm.location
-        };
+        try {
+            const response = await apiService.updateProfile({
+                bio: editForm.bio,
+                major: editForm.major,
+                classYear: editForm.classYear,
+                location: editForm.location
+            });
 
-        localStorage.setItem(user.username, JSON.stringify(updatedUser));
-        setUser(updatedUser);
-        setIsEditing(false);
+            if (response.success && response.data) {
+                const updatedUser = response.data as UserProfile;
+                setUser(updatedUser);
+                setIsEditing(false);
+                alert('Profile updated successfully!');
+            } else {
+                alert('Failed to update profile. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            alert('Failed to update profile. Please try again.');
+        }
     };
 
     const handleCancelEdit = () => {
@@ -117,8 +299,18 @@ export default function Profile() {
         setIsEditing(false);
     };
 
-    if (!user) {
-        return null;
+    if (loading || !user) {
+        return (
+            <div>
+                <Header />
+                <main className="container">
+                    <div style={{ textAlign: 'center', padding: '2rem', color: '#ffffffb3' }}>
+                        Loading profile...
+                    </div>
+                </main>
+                <Footer />
+            </div>
+        );
     }
 
     // Get user initials for avatar
@@ -130,10 +322,12 @@ export default function Profile() {
         .slice(0, 2);
 
     // Format date
-    const joinDate = new Date(user.createdAt).toLocaleDateString('en-US', {
-        month: 'long',
-        year: 'numeric'
-    });
+    const joinDate = user.createdAt 
+        ? new Date(user.createdAt).toLocaleDateString('en-US', {
+            month: 'long',
+            year: 'numeric'
+        })
+        : 'Recently';
 
     // Calculate stats
     const totalThreads = userThreads.length;
@@ -154,25 +348,6 @@ export default function Profile() {
         return `${days} day${days > 1 ? 's' : ''} ago`;
     };
 
-    const getCategoryLabel = (categoryValue: string) => {
-        const mapping: Record<string, string> = {
-            "academic-help": "Academic Help",
-            "course-reviews": "Course Reviews",
-            "research-projects": "Research & Projects",
-            "events-activities": "Events & Activities",
-            "clubs-organizations": "Clubs & Organizations",
-            "sports-fitness": "Sports & Fitness",
-            "career-internships": "Career & Internships",
-            "housing-roommates": "Housing & Roommates",
-            "buy-sell": "Buy & Sell",
-            "gaming": "Gaming",
-            "movies-tv": "Movies & TV",
-            "music": "Music",
-            "general-discussion": "General Discussion",
-            "announcements": "Announcements"
-        };
-        return mapping[categoryValue] || categoryValue;
-    };
 
     return (
         <div>
@@ -213,7 +388,7 @@ export default function Profile() {
                                 </div>
                             </div>
 
-                            {isEditing ? (
+                            {isOwnProfile && isEditing ? (
                                 <div className="about-card">
                                     <h3>Edit Profile</h3>
                                     <div style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
@@ -272,11 +447,13 @@ export default function Profile() {
                                 <div className="about-card">
                                     <div className="about-card-header">
                                         <h3>About</h3>
-                                        <button
-                                            className="edit-profile-btn"
-                                            onClick={() => setIsEditing(!isEditing)}
-                                        ><SquarePen/>
-                                        </button>
+                                        {isOwnProfile && (
+                                            <button
+                                                className="edit-profile-btn"
+                                                onClick={() => setIsEditing(!isEditing)}
+                                            ><SquarePen/>
+                                            </button>
+                                        )}
                                     </div>
                                     <p>{user.bio || 'No bio added yet. Click "Edit Profile" to add one!'}</p>
                                     <div className="about-details">
@@ -329,68 +506,110 @@ export default function Profile() {
 
                         <div className="profile-main">
                             <div className="activity-tabs">
-                                <button className="tab-btn active">My Threads</button>
+                                <button 
+                                    className={`tab-btn ${activeTab === 'threads' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('threads')}
+                                >
+                                    {(isOwnProfile ? 'My' : username + "'s")} Threads
+                                </button>
+                                <button 
+                                    className={`tab-btn ${activeTab === 'comments' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('comments')}
+                                >
+                                    {(isOwnProfile ? 'My' : username + "'s")} Comments
+                                </button>
                             </div>
 
                             <div className="activity-content">
-                                {displayedThreads.length === 0 ? (
-                                    <div className="empty-message" style={{textAlign: 'center', padding: '2rem', color: '#ffffffb3'}}>
-                                        No threads yet. <Link to="/thread/new" style={{color: '#fdcffa', textDecoration: 'none'}}>Create your first thread!</Link>
-                                    </div>
-                                ) : (
-                                    <div className="threads-list">
-                                        {displayedThreads.map((thread) => (
-                                            <div key={thread.id} className="thread-item">
-                                                <div className="thread-main">
-                                                    <div className="thread-avatar">{initials}</div>
-                                                    <div className="thread-content">
-                                                        <h3>
-                                                            <Link
-                                                                to={`/thread/${encodeURIComponent(thread.id.split("_")[1])}`}>{thread.title}</Link>
-                                                        </h3>
-                                                        <p className="thread-preview">
-                                                            {thread.content.substring(0, 150)}{thread.content.length > 150 ? '...' : ''}
-                                                        </p>
-                                                        <div className="thread-meta">
-                                                            <span className="thread-author">{thread.author}</span>
-                                                            <span className="thread-category">{getCategoryLabel(thread.category)}</span>
-                                                            <span className="thread-time">{getTimeAgo(thread.createdAt)}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="thread-stats">
-                                                    <div className="stat">
-                                                        <MessageSquare size={20}/>
-                                                        <span className="stat-count">{thread.replies || 0}</span>
-                                                    </div>
-                                                    <div className="stat">
-                                                        <Eye size={20}/>
-                                                        <span className="stat-count">{thread.views || 0}</span>
-                                                    </div>
-                                                </div>
+                                {activeTab === 'threads' ? (
+                                    <>
+                                        {displayedThreads.length === 0 ? (
+                                            <div className="empty-message" style={{textAlign: 'center', padding: '2rem', color: '#ffffffb3'}}>
+                                                No threads yet. <Link to="/thread/new" style={{color: '#fdcffa', textDecoration: 'none'}}>Create your first thread!</Link>
                                             </div>
-                                        ))}
-                                    </div>
+                                        ) : (
+                                            <div className="threads-list">
+                                                {displayedThreads.map((thread) => (
+                                                    <ThreadItem
+                                                        key={thread.id}
+                                                        thread={thread}
+                                                        getTimeAgo={getTimeAgo}
+                                                        getThreadInitials={() => initials}
+                                                    />
+                                                ))}
+                                            </div>
+                                        )}
+                                        {/* Show Load More button only if there are more than 5 threads and not all are displayed */}
+                                        {userThreads.length > 5 && displayedThreads.length < userThreads.length && (
+                                            <div className="load-more">
+                                                <button className="load-more-btn" onClick={handleLoadMoreThreads}>
+                                                    Load More ({userThreads.length - displayedThreads.length} remaining)
+                                                </button>
+                                            </div>
+                                        )}
+                                        {/* Show "All threads loaded" only if there were more than 5 threads initially and now all are displayed */}
+                                        {userThreads.length > 5 && displayedThreads.length === userThreads.length && (
+                                            <div className="load-more">
+                                                <button className="load-more-btn" disabled style={{opacity: 0.5, cursor: 'not-allowed'}}>
+                                                    All threads loaded
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        {displayedComments.length === 0 ? (
+                                            <div className="empty-message" style={{textAlign: 'center', padding: '2rem', color: '#ffffffb3'}}>
+                                                No comments yet.
+                                            </div>
+                                        ) : (
+                                            <div className="threads-list">
+                                                {displayedComments.map((comment) => {
+                                                    const threadId = typeof comment.thread === 'object' && comment.thread ? comment.thread.id : (typeof comment.thread === 'string' ? comment.thread : '');
+                                                    const threadTitle = typeof comment.thread === 'object' && comment.thread ? comment.thread.title : 'Unknown Thread';
+                                                    const replyingTo = typeof comment.repliedToUsername === 'string' && comment.repliedToUsername ? comment.repliedToUsername : 'Unknown User';
+                                                    return (
+                                                        <Link to={`/thread/${threadId}`} key={comment.id} className="thread-item" style={{cursor: 'pointer'}}>
+                                                            <div className="thread-main">
+                                                                <div className="thread-content">
+                                                                    
+                                                                    <div className="thread-meta" style={{fontSize: '0.875rem'}}>
+                                                                        <span>Replying to <Link to={`/profile/${replyingTo}`}>{replyingTo}</Link> in <span style={{ color:'#fdcffa',fontWeight: '600'}}>{threadTitle}</span></span>
+                                                                        <span className="thread-time">{getTimeAgo(comment.createdAt)}</span>
+                                                                    </div>
+                                                                    <p className="thread-preview" style={{fontSize: '1rem'}}>{comment.content.substring(0, 150)}{comment.content.length > 150 ? '...' : ''}</p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="thread-stats">
+                                                                <div className="stat">
+                                                                    <Heart size={20} />
+                                                                    <span className="stat-count">{comment.likes || 0}</span>
+                                                                </div>
+                                                            </div>
+                                                        </Link>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                        {/* Show Load More button only if there are more than 5 comments and not all are displayed */}
+                                        {userComments.length > 5 && displayedComments.length < userComments.length && (
+                                            <div className="load-more">
+                                                <button className="load-more-btn" onClick={handleLoadMoreComments}>
+                                                    Load More ({userComments.length - displayedComments.length} remaining)
+                                                </button>
+                                            </div>
+                                        )}
+                                        {/* Show "All comments loaded" only if there were more than 5 comments initially and now all are displayed */}
+                                        {userComments.length > 5 && displayedComments.length === userComments.length && (
+                                            <div className="load-more">
+                                                <button className="load-more-btn" disabled style={{opacity: 0.5, cursor: 'not-allowed'}}>
+                                                    All comments loaded
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
-
-                            {/* Show Load More button only if there are more than 5 threads and not all are displayed */}
-                            {userThreads.length > 5 && displayedThreads.length < userThreads.length && (
-                                <div className="load-more">
-                                    <button className="load-more-btn" onClick={handleLoadMore}>
-                                        Load More ({userThreads.length - displayedThreads.length} remaining)
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* Show "All threads loaded" only if there were more than 5 threads initially and now all are displayed */}
-                            {userThreads.length > 5 && displayedThreads.length === userThreads.length && (
-                                <div className="load-more">
-                                    <button className="load-more-btn" disabled style={{opacity: 0.5, cursor: 'not-allowed'}}>
-                                        All threads loaded
-                                    </button>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>

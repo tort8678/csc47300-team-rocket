@@ -1,6 +1,10 @@
 import { UserService } from "../services/user";
 import { Request, Response } from "express";
 import { UserI } from "../database/userModel";
+import { AuthRequest } from "../types/index.js";
+import ThreadModel, { ThreadStatus } from "../database/threadModel.js";
+import CommentModel from "../database/commentModel.js";
+import { UserRole } from "../types/index.js";
 
 
 export class UserController {
@@ -57,11 +61,33 @@ export class UserController {
         try {
             const user = await UserService.getUserByUsername(username);
             if (!user) {
-                return res.status(404).json({ message: "User not found" });
+                return res.status(404).json({ 
+                    success: false,
+                    message: "User not found" 
+                });
             }
-            res.json(user);
+            res.json({
+                success: true,
+                data: {
+                    id: user._id.toString(),
+                    username: user.username,
+                    email: user.email,
+                    profilePictureUrl: user.profilePictureUrl,
+                    bio: user.bio,
+                    major: user.major,
+                    classYear: user.classYear,
+                    location: user.location,
+                    EMPLID: user.EMPLID,
+                    role: user.role,
+                    createdAt: user.createdAt
+                }
+            });
         } catch (error) {
-            res.status(500).json({ message: "Server error", error });
+            res.status(500).json({ 
+                success: false,
+                message: "Server error", 
+                error: String(error)
+            });
         }
     }
 
@@ -74,13 +100,252 @@ export class UserController {
         }
     }
 
-    static async addThreadToUser(req: Request, res: Response) {
-        const { userId, threadId } = req.body;
-        try{
-            res.json( await UserService.AddThreadToUser(userId,threadId));
-             
-        } catch (error){
-            res.status(500).json({ message: "Server error", error})
+
+    static async getCurrentUserProfile(req: AuthRequest, res: Response) {
+        try {
+            if (!req.user) {
+                return res.status(401).json({ 
+                    success: false,
+                    message: "Not authenticated" 
+                });
+            }
+
+            const user = await UserService.getUserById(req.user.userId);
+            if (!user) {
+                return res.status(404).json({ 
+                    success: false,
+                    message: "User not found" 
+                });
+            }
+
+            res.json({
+                success: true,
+                data: {
+                    id: user._id.toString(),
+                    username: user.username,
+                    email: user.email,
+                    profilePictureUrl: user.profilePictureUrl,
+                    bio: user.bio,
+                    major: user.major,
+                    classYear: user.classYear,
+                    location: user.location,
+                    EMPLID: user.EMPLID,
+                    role: user.role,
+                    createdAt: user.createdAt
+                }
+            });
+        } catch (error) {
+            res.status(500).json({ message: "Server error", error });
+        }
+    }
+
+    static async updateCurrentUserProfile(req: AuthRequest, res: Response) {
+        try {
+            if (!req.user) {
+                return res.status(401).json({ 
+                    success: false,
+                    message: "Not authenticated" 
+                });
+            }
+
+            const updateData: Partial<UserI> = req.body;
+            // Remove fields that shouldn't be updated directly
+            delete updateData._id;
+            delete updateData.password;
+            delete updateData.username;
+            delete updateData.email;
+            delete updateData.role;
+            delete updateData.isActive;
+
+            const updatedUser = await UserService.updateUser(req.user.userId, updateData);
+            if (!updatedUser) {
+                return res.status(404).json({ 
+                    success: false,
+                    message: "User not found" 
+                });
+            }
+
+            res.json({
+                success: true,
+                data: {
+                    id: updatedUser._id.toString(),
+                    username: updatedUser.username,
+                    email: updatedUser.email,
+                    profilePictureUrl: updatedUser.profilePictureUrl,
+                    bio: updatedUser.bio,
+                    major: updatedUser.major,
+                    classYear: updatedUser.classYear,
+                    location: updatedUser.location,
+                    EMPLID: updatedUser.EMPLID,
+                    role: updatedUser.role,
+                    createdAt: updatedUser.createdAt
+                }
+            });
+        } catch (error) {
+            res.status(500).json({ message: "Server error", error });
+        }
+    }
+
+    static async getUserThreadsByUsername(req: Request, res: Response) {
+        try {
+            const { username } = req.params;
+            const page = parseInt(req.query.page as string) || 1;
+            const limit = parseInt(req.query.limit as string) || 10;
+            const skip = (page - 1) * limit;
+
+            const user = await UserService.getUserByUsername(username);
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: "User not found"
+                });
+            }
+
+            const isAdmin = (req as AuthRequest).user?.role === UserRole.ADMIN;
+            const query: any = { author: user._id, isActive: true };
+            
+            if (!isAdmin) {
+                query.status = ThreadStatus.APPROVED;
+            }
+
+            const threads = await ThreadModel.find(query)
+                .populate('author', 'username profilePictureUrl')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .exec();
+
+            const total = await ThreadModel.countDocuments(query);
+
+            const threadsData = threads.map(thread => ({
+                id: thread._id.toString(),
+                title: thread.title,
+                content: thread.content,
+                author: {
+                    id: (thread.author as any)._id.toString(),
+                    username: (thread.author as any).username,
+                    profilePictureUrl: (thread.author as any).profilePictureUrl
+                },
+                category: thread.category,
+                status: thread.status,
+                likes: thread.likes.length,
+                replies: thread.replies || 0,
+                views: thread.views || 0,
+                createdAt: thread.createdAt,
+                updatedAt: thread.updatedAt
+            }));
+
+            res.json({
+                success: true,
+                data: threadsData,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit)
+                }
+            });
+        } catch (error) {
+            res.status(500).json({ message: "Server error", error });
+        }
+    }
+
+    static async getUserCommentsByUsername(req: Request, res: Response) {
+        try {
+            const { username } = req.params;
+            const page = parseInt(req.query.page as string) || 1;
+            const limit = parseInt(req.query.limit as string) || 10;
+            const skip = (page - 1) * limit;
+
+            const user = await UserService.getUserByUsername(username);
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: "User not found"
+                });
+            }
+
+            const comments = await CommentModel.find({ author: user._id, isActive: true })
+                .populate('author', 'username profilePictureUrl')
+                .populate({
+                    path: 'thread',
+                    select: 'title status author',
+                    populate: {
+                        path: 'author',
+                        select: 'username'
+                    }
+                })
+                .populate({
+                    path: 'parentComment',
+                    select: 'author',
+                    populate: {
+                        path: 'author',
+                        select: 'username'
+                    }
+                })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .exec();
+
+            const total = await CommentModel.countDocuments({ author: user._id, isActive: true });
+
+            const commentsData = comments
+                .filter(comment => comment.thread && comment.author) // Filter out comments with deleted threads/authors
+                .map(comment => {
+                    const thread = comment.thread as any;
+                    const author = comment.author as any;
+                    const parentComment = comment.parentComment as any;
+                    
+                    // Determine repliedToUsername:
+                    // If it's a top-level comment (no parentComment), return thread author username
+                    // If it's a reply (has parentComment), return parent comment author username
+                    let repliedToUsername: string | null = null;
+                    if (comment.parentComment && parentComment?.author) {
+                        // It's a reply - get parent comment author
+                        repliedToUsername = parentComment.author?.username || null;
+                    } else if (thread?.author) {
+                        // It's a top-level comment - get thread author
+                        repliedToUsername = thread.author?.username || null;
+                    }
+                    
+                    return {
+                        id: comment._id.toString(),
+                        content: comment.content,
+                        author: {
+                            id: author?._id?.toString() || '',
+                            username: author?.username || 'Unknown',
+                            profilePictureUrl: author?.profilePictureUrl
+                        },
+                        thread: {
+                            id: thread?._id?.toString() || '',
+                            title: thread?.title || 'Deleted Thread',
+                            status: thread?.status || 'deleted'
+                        },
+                        repliedToUsername,
+                        likes: comment.likes?.length || 0,
+                        createdAt: comment.createdAt,
+                        updatedAt: comment.updatedAt
+                    };
+                });
+
+            res.json({
+                success: true,
+                data: commentsData,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit)
+                }
+            });
+        } catch (error) {
+            console.error('Error in getUserCommentsByUsername:', error);
+            res.status(500).json({ 
+                success: false,
+                message: "Server error", 
+                error: error instanceof Error ? error.message : String(error)
+            });
         }
     }
 }

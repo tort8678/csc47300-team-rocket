@@ -1,19 +1,53 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import apiService from '../services/api';
+import type { User } from '../types/api.types';
 import '../styles/main.css';
 
 const Header: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+    const [isAdmin, setIsAdmin] = useState<boolean>(false);
     const navigate = useNavigate();
     const location = useLocation();
 
     useEffect(() => {
-        const loggedInUser = localStorage.getItem('loggedInUser');
-        setIsLoggedIn(!!loggedInUser);
-    }, []);
+        const token = localStorage.getItem('token');
+        setIsLoggedIn(!!token);
+        
+        // Check if user is admin
+        if (token) {
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                try {
+                    const user: User = JSON.parse(userStr);
+                    setIsAdmin(user.role === 'admin');
+                } catch (e) {
+                    // If parsing fails, try to fetch user from API
+                    apiService.getCurrentUser().then(response => {
+                        if (response.success && response.data) {
+                            setIsAdmin(response.data.role === 'admin');
+                        }
+                    }).catch(() => {
+                        setIsAdmin(false);
+                    });
+                }
+            } else {
+                // Fetch user from API if not in localStorage
+                apiService.getCurrentUser().then(response => {
+                    if (response.success && response.data) {
+                        setIsAdmin(response.data.role === 'admin');
+                    }
+                }).catch(() => {
+                    setIsAdmin(false);
+                });
+            }
+        } else {
+            setIsAdmin(false);
+        }
+    }, [location]);
 
     const handleLogout = () => {
-        localStorage.removeItem('loggedInUser');
+        apiService.logout();
         setIsLoggedIn(false);
         alert('You have been logged out.');
         navigate('/login');
@@ -58,6 +92,16 @@ const Header: React.FC = () => {
                                     className={location.pathname === '/profile' ? 'active' : ''}
                                 >
                                     Profile
+                                </Link>
+                            </li>
+                        )}
+                        {isLoggedIn && isAdmin && (
+                            <li>
+                                <Link
+                                    to="/admin"
+                                    className={location.pathname === '/admin' || location.pathname === '/admin/dashboard' ? 'active' : ''}
+                                >
+                                    Admin
                                 </Link>
                             </li>
                         )}

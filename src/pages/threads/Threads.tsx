@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from 'react-router-dom';
-import { MessageSquare, Eye, Plus } from 'lucide-react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import Header from "../../components/header";
 import Footer from "../../components/footer";
+import ThreadItem from "../../components/threadItem";
 import '../../styles/threads.css';
-import type { Thread } from "../../types/types";
+import type { Thread, ApiResponse } from "../../types/api.types";
+
+const API_BASE_URL = "http://localhost:3000/api";
 
 // Define category types
 interface CategoryOption {
@@ -59,9 +62,6 @@ const categoryGroups: CategoryGroup[] = [
   }
 ];
 
-// Get all categories flattened for display
-const allCategories = categoryGroups.flatMap(group => group.options);
-
 // Time formatting function
 const getTimeAgo = (date: string | Date) => {
   const now = new Date();
@@ -78,67 +78,133 @@ const getTimeAgo = (date: string | Date) => {
 };
 
 export default function Threads() {
-  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [threads, setThreads] = useState<Thread[]>([]);
+  const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<'recent' | 'popular' | 'replies' | 'views'>('recent');
-  const [filter, setFilter] = useState<'all' | 'following' | 'my-threads'>('all');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [filter, setFilter] = useState<'all' | 'liked' | 'my-threads'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>(searchParams.get('category') || 'all');
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
   const threadsPerPage = 10;
 
+  let url = new URL(window.location.href);
+  url.searchParams.delete('category');
+  window.history.replaceState({}, '', url.toString());
+  
   useEffect(() => {
-    // Get current user from localStorage (you might want to adjust this based on your auth system)
-    const user = localStorage.getItem('currentUser') || 'anonymous';
-    setCurrentUser(user);
-
-    // Load threads from localStorage
-    const loaded: Thread[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key) continue;
-      if (key.startsWith('thread_')) {
-        try {
-          const t = JSON.parse(localStorage.getItem(key) as string) as Thread;
-          if (t) loaded.push(t);
-        } catch (e) {
-          // Ignore malformed entries
-        }
+    document.title = 'Threads - DamIt';
+    // Get current user from token
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setCurrentUser(payload.userId);
+      } catch (e) {
+        // Invalid token
+        setCurrentUser(null);
+      }
+    } else {
+      setCurrentUser(null);
+      // Reset filter if user logs out
+      if (filter === 'my-threads' || filter === 'liked') {
+        setFilter('all');
       }
     }
 
-    // Sort by createdAt desc by default
-    loaded.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    setThreads(loaded);
-  }, []);
+    fetchThreads();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, sort, selectedCategory, filter]);
+
+  // Update total pages for liked filter
+  useEffect(() => {
+    if (filter === 'liked' && threads.length > 0) {
+      const totalLiked = threads.filter(t => t.userLiked === true).length;
+      setTotalPages(Math.ceil(totalLiked / threadsPerPage));
+    }
+  }, [threads, filter, threadsPerPage]);
+
+  const fetchThreads = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      // For 'liked' filter, fetch more threads to filter client-side
+      const limit = filter === 'liked' ? 1000 : threadsPerPage;
+      let url = `${API_BASE_URL}/threads?page=${currentPage}&limit=${limit}&sort=${sort}`;
+      
+      if (selectedCategory !== 'all') {
+        url += `&category=${selectedCategory}`;
+      }
+      
+      if (filter === 'my-threads' && currentUser) {
+        url += `&authorId=${currentUser}`;
+      }
+      // Note: 'liked' filter is handled client-side, so we fetch all threads
+
+      const response = await fetch(url, { headers });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch threads');
+      }
+
+      const data: ApiResponse<Thread[]> = await response.json();
+      
+      if (data.success && data.data) {
+        setThreads(data.data);
+        // Only set pagination if not filtering by 'liked' (we'll calculate it client-side)
+        if (data.pagination && filter !== 'liked') {
+          setTotalPages(data.pagination.totalPages);
+        } else if (filter === 'liked') {
+          // Calculate total pages for liked threads
+          const likedCount = data.data.filter((t: Thread) => t.userLiked === true).length;
+          setTotalPages(Math.ceil(likedCount / threadsPerPage));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching threads:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredAndSortedThreads = useMemo(() => {
     let filtered = threads;
 
     // Apply filter
     if (filter === 'my-threads' && currentUser) {
-      filtered = filtered.filter(thread => thread.author === currentUser);
+      filtered = filtered.filter(thread => {
+        const authorId = typeof thread.author === 'object' ? thread.author.id : thread.author;
+        return authorId === currentUser;
+      });
+    } else if (filter === 'liked' && currentUser) {
+      // Filter for liked threads - userLiked should be true
+      filtered = filtered.filter(thread => thread.userLiked === true);
     }
-    // Note: 'following' filter would need additional logic for following system
 
-    // Apply category filter
+    // Apply category filter (already done server-side, but keeping for client-side filtering if needed)
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(thread => thread.category === selectedCategory);
     }
 
-    // Apply sorting
-    if (sort === 'recent') {
-      return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // For 'liked' filter, apply pagination client-side since we fetched all threads
+    if (filter === 'liked') {
+      const startIndex = (currentPage - 1) * threadsPerPage;
+      const endIndex = startIndex + threadsPerPage;
+      filtered = filtered.slice(startIndex, endIndex);
     }
-    // For other sorting options, you'll need to store these metrics in your Thread type
-    return filtered;
-  }, [threads, filter, selectedCategory, sort, currentUser]);
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredAndSortedThreads.length / threadsPerPage);
-  const startIndex = (currentPage - 1) * threadsPerPage;
-  const endIndex = startIndex + threadsPerPage;
-  const currentThreads = filteredAndSortedThreads.slice(startIndex, endIndex);
+    // Sorting is done server-side, but we can apply additional client-side sorting if needed
+    return filtered;
+  }, [threads, filter, selectedCategory, currentUser, currentPage, threadsPerPage]);
 
   // Generate page numbers for pagination
   const getPageNumbers = () => {
@@ -169,19 +235,16 @@ export default function Threads() {
     return pages;
   };
 
-  const handleNewThread = () => {
-    navigate('/thread/new');
-  };
-
-  const getCategoryLabel = (categoryValue: string) => {
-    const category = allCategories.find(cat => cat.value === categoryValue);
-    return category ? category.label : categoryValue;
-  };
-
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     // Scroll to top when changing pages
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const getThreadInitials = (author: string | { username: string } | undefined) => {
+    if (!author) return 'U';
+    const username = typeof author === 'string' ? author : author.username || 'U';
+    return username.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || username.slice(0, 2).toUpperCase();
   };
 
   return (
@@ -193,7 +256,7 @@ export default function Threads() {
               <h1>Recent Threads</h1>
               <p>Latest discussions from the community</p>
             </div>
-            <button onClick={handleNewThread} className="new-thread-btn"><Plus /></button>
+            <Link to="/thread/new" className="new-thread-btn"><Plus /></Link>
           </div>
 
           <div className="filter-bar">
@@ -208,20 +271,32 @@ export default function Threads() {
                 All
               </button>
               <button
-                  className={`filter-btn ${filter === 'following' ? 'active' : ''}`}
+                  className={`filter-btn ${filter === 'liked' ? 'active' : ''}`}
                   onClick={() => {
-                    setFilter('following');
-                    setCurrentPage(1);
+                    if (currentUser) {
+                      setFilter('liked');
+                      setCurrentPage(1);
+                    } else {
+                      alert('Please log in to view liked threads.');
+                    }
                   }}
+                  disabled={!currentUser}
+                  style={{ opacity: !currentUser ? 0.5 : 1, cursor: !currentUser ? 'not-allowed' : 'pointer' }}
               >
-                Following
+                Liked
               </button>
               <button
                   className={`filter-btn ${filter === 'my-threads' ? 'active' : ''}`}
                   onClick={() => {
-                    setFilter('my-threads');
-                    setCurrentPage(1);
+                    if (currentUser) {
+                      setFilter('my-threads');
+                      setCurrentPage(1);
+                    } else {
+                      alert('Please log in to view your threads.');
+                    }
                   }}
+                  disabled={!currentUser}
+                  style={{ opacity: !currentUser ? 0.5 : 1, cursor: !currentUser ? 'not-allowed' : 'pointer' }}
               >
                 My Threads
               </button>
@@ -269,51 +344,22 @@ export default function Threads() {
           </div>
 
           <div className="threads-list">
-            {currentThreads.length === 0 ? (
+            {loading ? (
+                <div className="empty-message">Loading threads...</div>
+            ) : filteredAndSortedThreads.length === 0 ? (
                 <div className="empty-message">
                   {filter === 'my-threads'
                       ? "You haven't created any threads yet."
                       : "No threads found matching your criteria."}
                 </div>
             ) : (
-                currentThreads.map((thread) => (
-                    <div key={thread.id} className="thread-item">
-                      <div className="thread-main">
-                        <div className="thread-avatar">
-                          {(thread.author || 'U').slice(0, 2).toUpperCase()}
-                        </div>
-                        <div className="thread-content">
-                          <h3>
-                            <Link to={`/thread/${encodeURIComponent(thread.id.split("_")[1])}`}>
-                              {thread.title}
-                            </Link>
-                          </h3>
-                          <p className="thread-preview">
-                            {thread.content.substring(0, 150)}
-                            {thread.content.length > 150 && '...'}
-                          </p>
-                          <div className="thread-meta">
-                            <span className="thread-author">{thread.author || 'unknown'}</span>
-                            <span className="thread-category">
-                        {getCategoryLabel(thread.category)}
-                      </span>
-                            <span className="thread-time">
-                        {getTimeAgo(thread.createdAt)}
-                      </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="thread-stats">
-                        <div className="stat">
-                          <MessageSquare size={20}/>
-                          <span className="stat-count">{thread.replies ?? 0}</span>
-                        </div>
-                        <div className="stat">
-                          <Eye size={20}/>
-                          <span className="stat-count">{thread.views ?? 0}</span>
-                        </div>
-                      </div>
-                    </div>
+                filteredAndSortedThreads.map((thread) => (
+                    <ThreadItem
+                        key={thread.id}
+                        thread={thread}
+                        getTimeAgo={getTimeAgo}
+                        getThreadInitials={getThreadInitials}
+                    />
                 ))
             )}
           </div>

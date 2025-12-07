@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Header from "../../components/header";
 import { Library, PartyPopper, Briefcase, Home, Gamepad2, MessageSquare, Eye } from 'lucide-react';
+import apiService from '../../services/api';
 import '../../styles/main.css';
-import type { Thread } from '../../types/types';
+import type { Thread } from '../../types/api.types';
 
 export default function HomePage() {
     const [threads, setThreads] = useState<Thread[]>([]);
@@ -12,6 +14,7 @@ export default function HomePage() {
         posts: 0
     });
     const [categoryStats, setCategoryStats] = useState<Record<string, { threads: number; posts: number }>>({});
+    const [loading, setLoading] = useState(true);
 
     const categoryMapping: Record<string, { label: string; description: string }> = {
         "academic-help": {
@@ -19,7 +22,7 @@ export default function HomePage() {
             description: "Study groups, homework help, and course discussions"
         },
         "events-activities": {
-            label: "Campus Life",
+            label: "Events & Activities",
             description: "Events, clubs, and campus activities"
         },
         "career-internships": {
@@ -31,8 +34,8 @@ export default function HomePage() {
             description: "Find roommates and discuss housing options"
         },
         "gaming": {
-            label: "Entertainment",
-            description: "Gaming, movies, music, and hobbies"
+            label: "Gaming",
+            description: "Video games, board games, and gaming meetups"
         },
         "general-discussion": {
             label: "General Discussion",
@@ -41,56 +44,38 @@ export default function HomePage() {
     };
 
     useEffect(() => {
-        // Load threads from localStorage
-        const loaded: Thread[] = [];
-        let totalUsers = 0;
-        const userSet = new Set<string>();
-
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (!key) continue;
-
-            if (key.startsWith('thread_')) {
-                try {
-                    const t = JSON.parse(localStorage.getItem(key) as string) as Thread;
-                    if (t) {
-                        loaded.push(t);
-                        if (t.author) userSet.add(t.author);
-                    }
-                } catch (e) {
-                    // ignore malformed entries
-                }
-            } else if (!key.startsWith('thread_') && !key.startsWith('loggedInUser') && key !== 'null') {
-                // Count unique users (non-thread keys that are user data)
-                totalUsers++;
-            }
-        }
-
-        // Sort by most recent
-        loaded.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-        // Calculate total posts (threads + replies)
-        const totalPosts = loaded.reduce((sum, thread) => sum + 1 + (thread.replies || 0), 0);
-
-        // Calculate category stats using category values
-        const catStats: Record<string, { threads: number; posts: number }> = {};
-        loaded.forEach(thread => {
-            const cat = thread.category || 'general-discussion';
-            if (!catStats[cat]) {
-                catStats[cat] = { threads: 0, posts: 0 };
-            }
-            catStats[cat].threads++;
-            catStats[cat].posts += 1 + (thread.replies || 0);
-        });
-
-        setThreads(loaded.slice(0, 3)); // Only show 3 most recent
-        setStats({
-            members: Math.max(userSet.size, totalUsers),
-            threads: loaded.length,
-            posts: totalPosts
-        });
-        setCategoryStats(catStats);
+        document.title = 'Home - DamIt';
+        loadData();
     }, []);
+
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            
+            // Fetch stats and recent threads in parallel
+            const [statsResponse, threadsResponse] = await Promise.all([
+                apiService.getPublicStats(),
+                apiService.getThreads({ page: 1, limit: 3, sort: 'recent' })
+            ]);
+
+            if (statsResponse.success && statsResponse.data) {
+                setStats({
+                    members: statsResponse.data.members,
+                    threads: statsResponse.data.threads,
+                    posts: statsResponse.data.posts
+                });
+                setCategoryStats(statsResponse.data.categories || {});
+            }
+
+            if (threadsResponse.success && threadsResponse.data) {
+                setThreads(threadsResponse.data);
+            }
+        } catch (error) {
+            console.error('Error loading home page data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const getCategoryStats = (categoryValue: string) => {
         return categoryStats[categoryValue] || { threads: 0, posts: 0 };
@@ -100,8 +85,9 @@ export default function HomePage() {
         return categoryMapping[categoryValue]?.label || categoryValue;
     };
 
-    const getThreadInitials = (author: string) => {
-        return author.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || author.slice(0, 2).toUpperCase();
+    const getThreadInitials = (author: string | { username: string }) => {
+        const username = typeof author === 'string' ? author : author.username;
+        return username.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || username.slice(0, 2).toUpperCase();
     };
 
     const getTimeAgo = (date: string | Date) => {
@@ -117,6 +103,23 @@ export default function HomePage() {
         const days = Math.floor(hours / 24);
         return `${days} day${days > 1 ? 's' : ''} ago`;
     };
+
+    const getAuthorName = (author: string | { username: string }) => {
+        return typeof author === 'string' ? author : author.username;
+    };
+
+    if (loading) {
+        return (
+            <div>
+                <Header />
+                <main className="container">
+                    <div style={{ textAlign: 'center', padding: '2rem', color: '#ffffffb3' }}>
+                        Loading...
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -145,7 +148,7 @@ export default function HomePage() {
                 <section className="featured-categories">
                     <h2>Popular Categories</h2>
                     <div className="category-grid">
-                        <div className="category-card">
+                        <Link to="/threads?category=academic-help" className="category-card">
                             <Library className="category-icon" size={40} />
                             <h3>Academic Help</h3>
                             <p>Study groups, homework help, and course discussions</p>
@@ -153,17 +156,17 @@ export default function HomePage() {
                                 <span>{getCategoryStats('academic-help').threads} threads</span>
                                 <span>{getCategoryStats('academic-help').posts} posts</span>
                             </div>
-                        </div>
-                        <div className="category-card">
+                        </Link>
+                        <Link to="/threads?category=events-activities" className="category-card">
                             <PartyPopper className="category-icon" size={40} />
-                            <h3>Campus Life</h3>
+                            <h3>Events & Activities</h3>
                             <p>Events, clubs, and campus activities</p>
                             <div className="category-meta">
                                 <span>{getCategoryStats('events-activities').threads} threads</span>
                                 <span>{getCategoryStats('events-activities').posts} posts</span>
                             </div>
-                        </div>
-                        <div className="category-card">
+                        </Link>
+                        <Link to="/threads?category=career-internships" className="category-card">
                             <Briefcase className="category-icon" size={40} />
                             <h3>Career & Internships</h3>
                             <p>Job postings, internships, and career advice</p>
@@ -171,8 +174,8 @@ export default function HomePage() {
                                 <span>{getCategoryStats('career-internships').threads} threads</span>
                                 <span>{getCategoryStats('career-internships').posts} posts</span>
                             </div>
-                        </div>
-                        <div className="category-card">
+                        </Link>
+                        <Link to="/threads?category=housing-roommates" className="category-card">
                             <Home className="category-icon" size={40} />
                             <h3>Housing & Roommates</h3>
                             <p>Find roommates and discuss housing options</p>
@@ -180,17 +183,17 @@ export default function HomePage() {
                                 <span>{getCategoryStats('housing-roommates').threads} threads</span>
                                 <span>{getCategoryStats('housing-roommates').posts} posts</span>
                             </div>
-                        </div>
-                        <div className="category-card">
+                        </Link>
+                        <Link to="/threads?category=gaming" className="category-card">
                             <Gamepad2 className="category-icon" size={40} />
-                            <h3>Entertainment</h3>
-                            <p>Gaming, movies, music, and hobbies</p>
+                            <h3>Gaming</h3>
+                            <p>Video games, board games, and gaming meetups</p>
                             <div className="category-meta">
                                 <span>{getCategoryStats('gaming').threads} threads</span>
                                 <span>{getCategoryStats('gaming').posts} posts</span>
                             </div>
-                        </div>
-                        <div className="category-card">
+                        </Link>
+                        <Link to="/threads?category=general-discussion" className="category-card">
                             <MessageSquare className="category-icon" size={40} />
                             <h3>General Discussion</h3>
                             <p>Random topics and casual conversations</p>
@@ -198,7 +201,7 @@ export default function HomePage() {
                                 <span>{getCategoryStats('general-discussion').threads} threads</span>
                                 <span>{getCategoryStats('general-discussion').posts} posts</span>
                             </div>
-                        </div>
+                        </Link>
                     </div>
                 </section>
 
@@ -214,11 +217,11 @@ export default function HomePage() {
                                         <div className="thread-avatar">{getThreadInitials(thread.author || 'Anonymous')}</div>
                                         <div className="thread-content">
                                             <h3>
-                                                <a href={`/thread/${encodeURIComponent(thread.id.split("_")[1])}`}>{thread.title}</a>
+                                                <Link to={`/thread/${thread.id}`}>{thread.title}</Link>
                                             </h3>
                                             <p className="thread-preview">{thread.content.substring(0, 150)}{thread.content.length > 150 ? '...' : ''}</p>
                                             <div className="thread-meta">
-                                                <span className="thread-author">{thread.author || 'Anonymous'}</span>
+                                                <span className="thread-author">{getAuthorName(thread.author || 'Anonymous')}</span>
                                                 <span className="thread-category">{getCategoryLabel(thread.category)}</span>
                                                 <span className="thread-time">{getTimeAgo(thread.createdAt)}</span>
                                             </div>

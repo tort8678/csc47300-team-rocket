@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Header from "../../components/header";
 import Footer from "../../components/footer";
+import apiService from '../../services/api';
 import '../../styles/createThread.css';
-import type { Thread } from "../../types/types";
-import { SendHorizontal, X } from 'lucide-react';
+import { SendHorizontal, X, LoaderCircle, Upload, Trash, Save, Paperclip } from 'lucide-react';
 
 type CategoryGroup = {
     label: string;
@@ -59,48 +59,247 @@ const categoryGroups: CategoryGroup[] = [
 
 export default function CreateThread() {
     const navigate = useNavigate();
-    const [formData, setFormData] = useState<Omit<Thread, 'id' | 'createdAt'>>({
+    const { threadId } = useParams<{ threadId?: string }>();
+    const isEditMode = !!threadId;
+    const [formData, setFormData] = useState({
         title: '',
         category: '',
-        content: '',
-        author: '',
-        replies: 0,
-        views: 0
+        content: ''
     });
-
+    const [files, setFiles] = useState<File[]>([]);
+    const [existingAttachments, setExistingAttachments] = useState<string[]>([]);
+    const [attachmentNames, setAttachmentNames] = useState<Record<string, string>>({});
+    const [loading, setLoading] = useState(false);
+    const [loadingThread, setLoadingThread] = useState(isEditMode);
+    const [deletedAttachments, setDeletedAttachments] = useState<string[]>([]);
+    
     useEffect(() => {
-        const loggedInUser = localStorage.getItem('loggedInUser');
-        if (!loggedInUser) {
+        document.title = isEditMode ? 'Edit Thread - DamIt' : 'Create Thread - DamIt';
+        const token = localStorage.getItem('token');
+        if (!token) {
             alert('Please log in to create a thread.');
             navigate('/login');
-        }
-        else {
-            // prefill author from logged in user
-            setFormData(prev => ({ ...prev, author: loggedInUser }));
-        }
-    }, [navigate]);
-
-    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-
-        if (!formData.category || !formData.title.trim() || !formData.content.trim() || !formData.author) {
-            alert('Please fill in all required fields.');
             return;
         }
 
-        const threadInfo: Thread = {
-            ...formData,
-            createdAt: new Date(),
-            id: `thread_${Date.now()}`
-        };
+        // If editing, load the thread data
+        if (isEditMode && threadId) {
+            loadThreadData(threadId);
+        }
+    }, [navigate, isEditMode, threadId]);
+
+    const loadThreadData = async (id: string) => {
+        try {
+            setLoadingThread(true);
+            const response = await apiService.getThreadById(id);
+            if (response.success && response.data) {
+                setFormData({
+                    title: response.data.title,
+                    category: response.data.category,
+                    content: response.data.content
+                });
+                
+                // Load existing attachments
+                if (response.data.attachments && response.data.attachments.length > 0) {
+                    setExistingAttachments(response.data.attachments);
+                    
+                    // Fetch attachment filenames
+                    const names: Record<string, string> = {};
+                    await Promise.all(
+                        response.data.attachments.map(async (fileId: string) => {
+                            try {
+                                const fileResponse = await fetch(`http://localhost:3000/api/threads/attachments/${fileId}/info`);
+                                if (fileResponse.ok) {
+                                    const fileData = await fileResponse.json();
+                                    if (fileData.success && fileData.data) {
+                                        names[fileId] = fileData.data.filename;
+                                    }
+                                }
+                            } catch (error) {
+                                console.error(`Error fetching attachment info for ${fileId}:`, error);
+                            }
+                        })
+                    );
+                    setAttachmentNames(names);
+                }
+            } else {
+                alert('Failed to load thread data.');
+                navigate('/threads');
+            }
+        } catch (error) {
+            console.error('Error loading thread:', error);
+            alert('Failed to load thread data.');
+            navigate('/threads');
+        } finally {
+            setLoadingThread(false);
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const newFiles = Array.from(e.target.files);
+            setFiles(prev => [...prev, ...newFiles]);
+        }
+    };
+
+    const removeFile = (index: number) => {
+        setFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setLoading(true);
+
+        if (!formData.category || !formData.title.trim() || !formData.content.trim()) {
+            alert('Please fill in all required fields.');
+            setLoading(false);
+            return;
+        }
 
         try {
-            localStorage.setItem(threadInfo.id, JSON.stringify(threadInfo));
-            alert('Thread created successfully!');
-            navigate('/threads');
-        } catch (error) {
-            console.error('Error creating thread:', error);
-            alert('An error occurred while creating the thread. Please try again.');
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please log in to continue.');
+                navigate('/login');
+                return;
+            }
+
+            if (isEditMode && threadId) {
+                // Update existing thread
+                if (files.length > 0) {
+                    // Use FormData if files are attached
+                    const formDataToSend = new FormData();
+                    formDataToSend.append('title', formData.title);
+                    formDataToSend.append('content', formData.content);
+                    formDataToSend.append('category', formData.category);
+                    
+                    // Append files
+                    files.forEach((file) => {
+                        formDataToSend.append(`files`, file);
+                    });
+
+                    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/threads/${threadId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                            // Don't set Content-Type for FormData, browser will set it with boundary
+                        },
+                        body: formDataToSend
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Failed to update thread');
+                    }
+
+                    const data = await response.json();
+                    if (data.success) {
+                        alert('Thread updated successfully!');
+                        navigate(`/thread/${threadId}`);
+                    } else {
+                        throw new Error(data.message || 'Failed to update thread');
+                    }
+                } else {
+                    // Use JSON if no files but may have deleted attachments
+                    if (deletedAttachments.length > 0) {
+                        // Need to use FormData to send deletedAttachments
+                        const formDataToSend = new FormData();
+                        formDataToSend.append('title', formData.title);
+                        formDataToSend.append('content', formData.content);
+                        formDataToSend.append('category', formData.category);
+                        formDataToSend.append('deletedAttachments', JSON.stringify(deletedAttachments));
+                        
+                        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/threads/${threadId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: formDataToSend
+                        });
+                        
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.message || 'Failed to update thread');
+                        }
+                        
+                        const data = await response.json();
+                        if (data.success) {
+                            alert('Thread updated successfully!');
+                            navigate(`/thread/${threadId}`);
+                        } else {
+                            throw new Error(data.message || 'Failed to update thread');
+                        }
+                    } else {
+                        const response = await apiService.updateThread(threadId, {
+                            title: formData.title,
+                            content: formData.content,
+                            category: formData.category
+                        });
+
+                        if (response.success) {
+                            alert('Thread updated successfully!');
+                            navigate(`/thread/${threadId}`);
+                        } else {
+                            throw new Error(response.message || 'Failed to update thread');
+                        }
+                    }
+                }
+            } else {
+                // Create new thread
+                if (files.length > 0) {
+                    // Use FormData if files are attached
+                    const formDataToSend = new FormData();
+                    formDataToSend.append('title', formData.title);
+                    formDataToSend.append('content', formData.content);
+                    formDataToSend.append('category', formData.category);
+                    
+                    // Append files
+                    files.forEach((file) => {
+                        formDataToSend.append(`files`, file);
+                    });
+
+                    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/threads`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                            // Don't set Content-Type for FormData, browser will set it with boundary
+                        },
+                        body: formDataToSend
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Failed to create thread');
+                    }
+
+                    const data = await response.json();
+                    if (data.success) {
+                        alert('Thread created successfully! It will be reviewed by an admin before being published.');
+                        navigate('/threads');
+                    } else {
+                        throw new Error(data.message || 'Failed to create thread');
+                    }
+                } else {
+                    // Use JSON if no files
+                    const response = await apiService.createThread({
+                        title: formData.title,
+                        content: formData.content,
+                        category: formData.category
+                    });
+
+                    if (response.success) {
+                        alert('Thread created successfully! It will be reviewed by an admin before being published.');
+                        navigate('/threads');
+                    } else {
+                        throw new Error(response.message || 'Failed to create thread');
+                    }
+                }
+            }
+        } catch (error: any) {
+            console.error('Error saving thread:', error);
+            alert(error.message || 'An error occurred while saving the thread. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -115,8 +314,26 @@ export default function CreateThread() {
     };
 
     const handleCancel = () => {
-        navigate(-1);
+        if (isEditMode && threadId) {
+            navigate(`/thread/${threadId}`);
+        } else {
+            navigate(-1);
+        }
     };
+
+    if (loadingThread) {
+        return (
+            <div>
+                <Header />
+                <main className="container">
+                    <div style={{ textAlign: 'center', padding: '2rem', color: '#ffffffb3' }}>
+                        Loading thread data...
+                    </div>
+                </main>
+                <Footer />
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -124,8 +341,8 @@ export default function CreateThread() {
 
             <main className="container">
                 <div className="page-header">
-                    <h1>Create New Thread</h1>
-                    <p>Start a new discussion in the community</p>
+                    <h1>{isEditMode ? 'Edit Thread' : 'Create New Thread'}</h1>
+                    <p>{isEditMode ? 'Update your thread content' : 'Start a new discussion in the community'}</p>
                 </div>
 
                 <div className="form-container">
@@ -181,6 +398,137 @@ export default function CreateThread() {
                             />
                         </div>
 
+                        <div className="form-group">
+                            <label htmlFor="files">Attach Files (Optional)</label>
+                            <p className="helper-text">
+                                {isEditMode 
+                                    ? "You can add new files. New files will be added to the existing attachments."
+                                    : "You can attach files to your thread (images, documents, etc.)"
+                                }
+                            </p>
+                            
+                            {isEditMode && existingAttachments.length > 0 && (
+                                <div style={{
+                                    marginBottom: '1rem',
+                                    padding: '1rem',
+                                    background: 'rgba(0, 0, 0, 0.2)',
+                                    borderRadius: '8px'
+                                }}>
+                                    <p style={{ color: '#fdcffa', marginBottom: '0.5rem', fontWeight: 500 }}>
+                                        Current Attachments ({existingAttachments.length}):
+                                    </p>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        {existingAttachments.map((fileId, index) => {
+                                            const fileName = attachmentNames[fileId] || `Attachment ${index + 1}`;
+                                            return (
+                                                <div
+                                                    key={fileId}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        gap: '0.5rem',
+                                                        padding: '0.5rem',
+                                                        background: 'rgba(255, 255, 255, 0.05)',
+                                                        borderRadius: '4px',
+                                                        color: '#ffffffb3',
+                                                        fontSize: '0.875rem'
+                                                    }}
+                                                >
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                                                        <Paperclip size={16} />
+                                                        <span>{fileName}</span>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setExistingAttachments(prev => prev.filter(id => id !== fileId));
+                                                            setDeletedAttachments(prev => [...prev, fileId]);
+                                                        }}
+                                                        style={{
+                                                            background: 'transparent',
+                                                            border: 'none',
+                                                            color: '#ff6b6b',
+                                                            cursor: 'pointer',
+                                                            padding: '0.25rem',
+                                                            display: 'flex',
+                                                            alignItems: 'center'
+                                                        }}
+                                                    >
+                                                        <Trash size={16} />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            <div style={{ 
+                                border: '2px dashed rgba(255, 255, 255, 0.3)', 
+                                borderRadius: '8px', 
+                                padding: '1rem',
+                                background: 'rgba(0, 0, 0, 0.2)'
+                            }}>
+                                <input
+                                    type="file"
+                                    id="files"
+                                    multiple
+                                    onChange={handleFileChange}
+                                    style={{ display: 'none' }}
+                                />
+                                <label
+                                    htmlFor="files"
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        cursor: 'pointer',
+                                        color: '#fdcffa',
+                                        marginBottom: files.length > 0 ? '1rem' : '0'
+                                    }}
+                                >
+                                    <Upload size={20} />
+                                    <span>Upload files</span>
+                                </label>
+                                {files.length > 0 && (
+                                    <div style={{ marginTop: '1rem' }}>
+                                        {files.map((file, index) => (
+                                            <div
+                                                key={index}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    padding: '0.5rem',
+                                                    background: 'rgba(255, 255, 255, 0.1)',
+                                                    borderRadius: '4px',
+                                                    marginBottom: '0.5rem'
+                                                }}
+                                            >
+                                                <span style={{ color: 'white', fontSize: '0.875rem' }}>
+                                                    {file.name} ({(file.size / 1024).toFixed(2)} KB)
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeFile(index)}
+                                                    style={{
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        color: '#ff6b6b',
+                                                        cursor: 'pointer',
+                                                        padding: '0.25rem'
+                                                    }}
+                                                >
+                                                    <Trash size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                         <div className="form-actions">
                             <button
                                 type="button"
@@ -188,14 +536,13 @@ export default function CreateThread() {
                                 onClick={handleCancel}
                             >
                                 <X />
-
                             </button>
                             <button
                                 type="submit"
                                 className="btn btn-primary"
+                                disabled={loading}
                             >
-                                <SendHorizontal />
-
+                                {loading ? <LoaderCircle className='loading' /> : (isEditMode ? <Save /> : <SendHorizontal />)}
                             </button>
                         </div>
                     </form>

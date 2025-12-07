@@ -1,45 +1,56 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
+import bcrypt from 'bcryptjs';
+import { UserRole } from '../types/index.js';
 
-export interface UserThreads {
-    threadId: mongoose.Types.ObjectId;
-}
-
-export interface UserComments {
-    commentIds: mongoose.Types.ObjectId[];
-    threadId: mongoose.Types.ObjectId;
-}
-export interface UserI {
+export interface UserI extends Document {
     _id: mongoose.Types.ObjectId;
     username: string;
     password: string;
     profilePictureUrl?: string;
     email: string;
     bio?: string;
+    major?: string;
+    classYear?: string;
+    location?: string;
     createdAt: Date;
-    EMPLID: number;
-    threads?: UserThreads[];
-    comments?: UserComments[];
+    updatedAt: Date;
+    EMPLID?: number;
+    role: UserRole;
+    isActive: boolean;
+    comparePassword(candidatePassword: string): Promise<boolean>;
 }
-
-const UserThreadSchema = new Schema<UserThreads>({
-    threadId: { type: Schema.Types.ObjectId, ref: "ThreadId" }
-});
-const UserCommentSchema = new Schema<UserComments>({
-    commentIds: [{ type: Schema.Types.ObjectId, ref: "CommentId" }],
-    threadId: { type: Schema.Types.ObjectId, ref: "ThreadId", required: true }
-});
 
 const userSchema = new Schema<UserI>({
     _id: { type: Schema.Types.ObjectId, auto: true },
-    username: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    username: { type: String, required: true, unique: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    password: { type: String, required: true, select: false },
     profilePictureUrl: { type: String },
     bio: { type: String },
-    EMPLID: { type: Number, required: true, unique: true },
-    threads: [UserThreadSchema],
-    comments: [UserCommentSchema]
+    major: { type: String },
+    classYear: { type: String },
+    location: { type: String },
+    EMPLID: { type: Number, unique: true, sparse: true },
+    role: { type: String, enum: Object.values(UserRole), default: UserRole.USER, required: true },
+    isActive: { type: Boolean, default: true }
 }, { timestamps: true });
+
+// Hash password before saving
+userSchema.pre('save', async function () {
+    if (!this.isModified('password')) return;
+    
+    try {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+    } catch (error: any) {
+        throw error;
+    }
+});
+
+// Compare password method
+userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
+    return bcrypt.compare(candidatePassword, this.password);
+};
 
 const User = mongoose.model<UserI>("User", userSchema);
 

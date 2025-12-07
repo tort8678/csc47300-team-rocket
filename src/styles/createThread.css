@@ -120,3 +120,11 @@
     color: rgba(255, 255, 255, 0.7);
     margin: 0.5rem 0;
 }
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading {
+    animation: spin 1s linear infinite;
+}

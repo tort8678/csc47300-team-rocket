@@ -1,37 +1,49 @@
-// get all posts from a single user --> user has array of post ids, including comments. Comments have post id and comment id, with comment id optional
-import mongoose, { Schema } from "mongoose";
-interface MessageBody {
-    _id: mongoose.Types.ObjectId;
-    authorId: string;
-    content: string;
-    createdAt: Date;
-}
-export interface ReplyI extends MessageBody {
-    threadId: string;
+import mongoose, { Schema, Document } from "mongoose";
+
+export enum ThreadStatus {
+    PENDING = 'pending',
+    APPROVED = 'approved',
+    REJECTED = 'rejected'
 }
 
-export interface ThreadI extends MessageBody {
+export interface ThreadI extends Document {
+    _id: mongoose.Types.ObjectId;
     title: string;
-    replies?: ReplyI[];
+    content: string;
+    author: mongoose.Types.ObjectId;
     category: string;
+    status: ThreadStatus;
     views: number;
+    likes: mongoose.Types.ObjectId[];
+    attachments?: string[];
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 }
-const ReplySchema = new Schema<ReplyI>({
-    _id: { type: Schema.Types.ObjectId, auto: true },
-    threadId: { type: String, required: true },
-    authorId: { type: String, required: true },
-    content: { type: String, required: true },
-    createdAt: { type: Date, required: true }
-});
+
 const ThreadSchema = new Schema<ThreadI>({
     _id: { type: Schema.Types.ObjectId, auto: true },
-    title: { type: String, required: true },
+    title: { type: String, required: true, trim: true },
     content: { type: String, required: true },
-    authorId: { type: String, required: true },
-    createdAt: { type: Date, required: true },
+    author: { type: Schema.Types.ObjectId, ref: "User", required: true },
     category: { type: String, required: true },
-    views: { type: Number, required: true },
-    replies: [ReplySchema]
-});
-const ThreadModel = mongoose.model("Thread", ThreadSchema);
+    status: {
+        type: String,
+        enum: Object.values(ThreadStatus),
+        default: ThreadStatus.PENDING
+    },
+    views: { type: Number, default: 0 },
+    likes: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    attachments: [{ type: Schema.Types.ObjectId }], // Store GridFS file IDs
+    isActive: { type: Boolean, default: true }
+}, { timestamps: true });
+
+// Index for better query performance
+ThreadSchema.index({ status: 1, isActive: 1 });
+ThreadSchema.index({ category: 1, status: 1, isActive: 1 });
+ThreadSchema.index({ createdAt: -1 });
+
+const ThreadModel = mongoose.model<ThreadI>("Thread", ThreadSchema);
+
 export { ThreadModel };
+export default ThreadModel;

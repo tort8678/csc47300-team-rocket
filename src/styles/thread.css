@@ -1,0 +1,371 @@
+/* Thread Detail Page Styles */
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #fdcffa;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: opacity 0.2s;
+    margin-bottom: 2rem;
+}
+
+.back-link:hover {
+    opacity: 0.8;
+}
+
+/* Thread Article */
+.thread-detail {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.thread-header {
+    margin-bottom: 1.5rem;
+}
+
+.thread-header h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    line-height: 1.3;
+}
+
+.thread-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.95rem;
+    flex-wrap: wrap;
+}
+
+.thread-meta a {
+    text-decoration: none;
+    color: #fdcffa;
+    font-weight: 600;
+}
+
+.thread-category {
+    background: rgba(253, 207, 250, 0.2);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    color: #fdcffa;
+}
+
+.thread-content {
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.7;
+    font-size: 1.05rem;
+    margin-bottom: 1.5rem;
+}
+
+.thread-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.like-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.like-btn.liked {
+    color: #fdcffa;
+    svg{
+        fill: #fdcffa;
+    }
+}
+
+.like-btn:hover{
+    color: #fdcffa !important;
+    svg{
+        fill: none !important
+    }
+}
+
+.thread-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 600;
+}
+
+.thread-edit-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 1rem;
+}
+
+.edit-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.edit-link:hover, .delete-btn:hover {
+    color: #fff;
+}
+
+.delete-btn {
+    color: #ffffffb3;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: opacity 0.2s;
+}
+
+/* Comments Section */
+.comments-section {
+    margin-top: 3rem;
+}
+
+.comments-section h2 {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+    color: white;
+}
+
+.comment-form {
+    background: #0006;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 16px #0003;
+    position: relative;
+}
+
+.comment-form textarea {
+    color: #fff;
+    resize: none;
+    background: #00000080;
+    border: 1px solid #ffffff26;
+    border-radius: 12px;
+    outline: none;
+    width: 100%;
+    padding: .9rem 1rem;
+    font-family: inherit;
+    font-size: 15px;
+    height: 150px;
+}
+
+.comment-form textarea:focus {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.comment-form textarea::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.comment-form [type="submit"]{
+    position: absolute;
+    right: 30px;
+    bottom: 38.5px;
+}
+
+.login-prompt {
+    margin-bottom: 2rem;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(0, 0, 0, 0.4);
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.login-prompt a {
+    color: #fdcffa;
+    font-weight: 600;
+}
+
+.comments-list {
+    background: #0006;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+/* Individual Comment */
+.comment-item {
+    background: #0006;
+    border-radius: 10px;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 1rem;
+    display: flex;
+    border: 2px solid #fdcffa4d;
+}
+
+.comment-item.nested {
+    background: #0006;
+    padding-left: 1.5rem;
+}
+
+.comment-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.comment-author {
+    text-decoration: none;
+    color: #fdcffa;
+    font-weight: 600;
+}
+
+.comment-time {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.875rem;
+}
+
+.comment-content {
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+}
+
+.comment-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    gap: 1rem;
+}
+
+.comment-actions button {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    transition: color 0.2s;
+    font-weight: bold;
+}
+
+.comment-actions button:hover {
+    color: #fff;
+}
+
+/* Reply Form */
+.reply-form {
+    border: 2px solid #fdcffa4d;
+    border-radius: 8px;
+    margin-top: 1rem;
+    padding: 1rem;
+    position: relative;
+    background: #0003;
+}
+
+.reply-form textarea {
+    color: #fff;
+    resize: none;
+    background: #00000080;
+    border: 1px solid #ffffff26;
+    border-radius: 8px;
+    outline: none;
+    width: 100%;
+    min-height: 120px;
+    padding: .75rem;
+    font-family: inherit;
+    font-size: 15px
+}
+
+.reply-form textarea:focus {
+    background: #000000b3
+}
+
+.reply-actions {
+    gap: .5rem;
+    margin-top: .75rem;
+    display: flex;
+    position: absolute;
+    bottom: 29.5px;
+    right: 21px;
+}
+
+/* Buttons */
+.btn {
+    padding: 0.75rem 2rem;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    opacity: 0.9;
+}
+
+.btn-secondary {
+    background: transparent;
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: white;
+}
+
+.btn-sm {
+    padding: 0.6rem 1.25rem;
+    font-size: 0.9rem;
+    border-radius: 8px;
+}
+
+/* Empty State */
+.comments-empty {
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+    padding: 2rem;
+}
+
+/* Loading & Error States */
+.loading-container,
+.error-container {
+    padding: 2rem;
+    text-align: center;
+}
+
+.error-container a {
+    color: #fdcffa;
+    text-decoration: none;
+    font-weight: 600;
+}
