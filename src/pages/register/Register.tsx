@@ -52,7 +52,6 @@ export default function Register() {
             });
 
             if (response.success) {
-                showModal('Account created successfully!', 'success');
                 navigate('/login');
             } else {
                 setError(response.message || 'Registration failed. Please try again.');
@@ -72,20 +71,6 @@ export default function Register() {
                 <section className="auth-card">
                     <h2>Create a new account</h2>
                     <p className="muted">Sign in to start posting and join discussions.</p>
-
-                    {error && (
-                        <div style={{ 
-                            padding: '0.75rem', 
-                            background: 'rgba(255, 0, 0, 0.1)', 
-                            border: '1px solid rgba(255, 0, 0, 0.3)',
-                            borderRadius: '8px',
-                            marginBottom: '1rem',
-                            color: '#ff6b6b'
-                        }}>
-                            {error}
-                        </div>
-                    )}
-
                     <form className="auth-form" id="loginForm" onSubmit={createUser}>
                         <label htmlFor="email">Email Address</label>
                         <input 
@@ -145,7 +130,16 @@ export default function Register() {
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             disabled={loading}
                         />
-
+                        {error && (
+                        <div style={{ 
+                            marginTop: '1rem',
+                            borderRadius: '8px',
+                            color: 'rgb(255, 107, 107)',
+                            textAlign: 'center' 
+                        }}>
+                            {error}
+                        </div>
+                        )}
                         <div className="auth-actions">
                             <button 
                                 type="submit" 
