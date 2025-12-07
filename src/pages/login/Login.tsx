@@ -65,20 +65,6 @@ export default function Login() {
                     <div>
                         <h2>Welcome back</h2>
                         <p className="muted">Sign in to start posting and join discussions.</p>
-
-                        {error && (
-                            <div style={{ 
-                                padding: '0.75rem', 
-                                background: 'rgba(255, 0, 0, 0.1)', 
-                                border: '1px solid rgba(255, 0, 0, 0.3)',
-                                borderRadius: '8px',
-                                marginBottom: '1rem',
-                                color: '#ff6b6b'
-                            }}>
-                                {error}
-                            </div>
-                        )}
-
                         <form className="auth-form" onSubmit={handleSubmit}>
                             <label htmlFor="username">Username</label>
                             <input 
@@ -103,7 +89,16 @@ export default function Login() {
                                 onChange={handleInputChange}
                                 disabled={loading}
                             />
-
+                            {error && (
+                            <div style={{ 
+                                marginTop: '1rem',
+                                borderRadius: '8px',
+                                color: 'rgb(255, 107, 107)',
+                                textAlign: 'center' 
+                            }}>
+                                {error}
+                            </div>
+                        )}
                             <div className="auth-actions">
                                 <button 
                                     type="submit" 
