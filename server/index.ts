@@ -17,16 +17,8 @@ import { initGridFS } from './services/gridfs.js';
     await mongoose.connect(mongoUri);
     console.log("Connect to the MongoDB successfully!");
     
-    // Initialize GridFS after connection (handle both cases: already open or not)
-    if (mongoose.connection.readyState === 1) {
-      // Connection is already open
-      initGridFS();
-    } else {
-      // Wait for connection to open
-      mongoose.connection.once('open', () => {
-        initGridFS();
-      });
-    }
+    // Initialize GridFS after connection
+    await initGridFS();
   } catch (error) {
     console.log(new Error(`${error}`));
   }

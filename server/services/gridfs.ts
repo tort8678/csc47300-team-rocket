@@ -1,15 +1,21 @@
-import mongoose from 'mongoose';
-import { GridFSBucket } from 'mongodb';
+import { MongoClient, GridFSBucket, ObjectId } from 'mongodb';
 
 let gridFSBucket: GridFSBucket | null = null;
+let mongoClient: MongoClient | null = null;
 
-export const initGridFS = () => {
+export const initGridFS = async () => {
   try {
-    const conn = mongoose.connection;
-    if (!conn.db) {
-      throw new Error('MongoDB database not available');
+    const mongoUri = process.env.MONGODB_URI;
+    if (!mongoUri) {
+      throw new Error('MONGODB_URI not set in environment variables');
     }
-    gridFSBucket = new GridFSBucket(conn.db, {
+    
+    // Create a separate MongoDB client for GridFS to avoid BSON version conflicts
+    mongoClient = new MongoClient(mongoUri);
+    await mongoClient.connect();
+    
+    const db = mongoClient.db();
+    gridFSBucket = new GridFSBucket(db, {
       bucketName: 'attachments'
     });
     console.log('GridFS initialized');
@@ -53,7 +59,7 @@ export const getFileFromGridFS = (fileId: string) => {
   if (!gridFSBucket) {
     throw new Error('GridFS not initialized');
   }
-  return gridFSBucket.openDownloadStream(new mongoose.Types.ObjectId(fileId));
+  return gridFSBucket.openDownloadStream(new ObjectId(fileId));
 };
 
 export const getFileInfoFromGridFS = async (fileId: string) => {
@@ -61,7 +67,7 @@ export const getFileInfoFromGridFS = async (fileId: string) => {
     throw new Error('GridFS not initialized');
   }
   
-  const files = await gridFSBucket.find({ _id: new mongoose.Types.ObjectId(fileId) }).toArray();
+  const files = await gridFSBucket.find({ _id: new ObjectId(fileId) }).toArray();
   if (files.length === 0) {
     return null;
   }
@@ -72,6 +78,6 @@ export const deleteFileFromGridFS = async (fileId: string): Promise<void> => {
   if (!gridFSBucket) {
     throw new Error('GridFS not initialized');
   }
-  await gridFSBucket.delete(new mongoose.Types.ObjectId(fileId));
+  await gridFSBucket.delete(new ObjectId(fileId));
 };
 
