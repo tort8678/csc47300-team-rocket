@@ -129,8 +129,7 @@
   width: 100%;
 }
 
-.filter-input,
-.filter-select {
+.filter-input {
   color: #fff;
   background: #00000080;
   border: 1px solid #ffffff26;
@@ -143,11 +142,6 @@
 
 .filter-input {
   width: 100%;
-}
-
-.filter-select {
-  width: 32%;
-  border-right: 10px solid #0000;
 }
 
 .section-header {

@@ -4,6 +4,7 @@ import { Heart, Eye, ArrowLeft, Edit, Trash, X, Reply, SendHorizontal, Download,
 import Header from '../../components/header';
 import Footer from '../../components/footer';
 import apiService from '../../services/api';
+import { useModal } from '../../contexts/ModalContext';
 import type { Thread, Comment, User } from '../../types/api.types';
 import '../../styles/main.css';
 import '../../styles/thread.css';
@@ -13,6 +14,7 @@ interface CommentWithReplies extends Comment {
 }
 
 export default function ThreadDetail() {
+  const { showModal, showConfirm } = useModal();
   const { threadId } = useParams<{ threadId: string }>();
   const navigate = useNavigate();
   const [thread, setThread] = useState<Thread | null>(null);
@@ -178,7 +180,7 @@ export default function ThreadDetail() {
       }
     } catch (err) {
       console.error('Failed to create comment:', err);
-      alert('Failed to post comment.');
+      showModal('Failed to post comment.', 'error');
     }
   };
 
@@ -198,20 +200,21 @@ export default function ThreadDetail() {
       }
     } catch (err) {
       console.error('Failed to post reply:', err);
-      alert('Failed to post reply.');
+      showModal('Failed to post reply.', 'error');
     }
   };
 
   const handleDeleteThread = async () => {
     if (!threadId || !currentUser) return;
-    if (!confirm('Are you sure you want to delete this thread?')) return;
+    const confirmed = await showConfirm('Are you sure you want to delete this thread?', 'Confirm Delete');
+    if (!confirmed) return;
 
     try {
       const response = await apiService.deleteThread(threadId);
       if (response.success) navigate('/threads');
     } catch (err) {
       console.error('Failed to delete thread:', err);
-      alert('Failed to delete thread.');
+      showModal('Failed to delete thread.', 'error');
     }
   };
 
@@ -315,7 +318,8 @@ export default function ThreadDetail() {
               <button
                 className="delete-comment-btn"
                 onClick={async () => {
-                  if (!confirm('Delete this comment?')) return;
+                  const confirmed = await showConfirm('Delete this comment?', 'Confirm Delete');
+                  if (!confirmed) return;
                   try {
                     await apiService.deleteComment(comment.id);
                     loadThread();
@@ -414,14 +418,14 @@ export default function ThreadDetail() {
         }
       });
       if (response.ok) {
-        alert('Thread approved successfully!');
+        showModal('Thread approved successfully!', 'success');
         loadThread(false);
       } else {
         throw new Error('Failed to approve thread');
       }
     } catch (error) {
       console.error('Error approving thread:', error);
-      alert('Failed to approve thread. Please try again.');
+      showModal('Failed to approve thread. Please try again.', 'error');
     }
   };
 
@@ -437,14 +441,14 @@ export default function ThreadDetail() {
         }
       });
       if (response.ok) {
-        alert('Thread rejected.');
+        showModal('Thread rejected.', 'success');
         loadThread(false);
       } else {
         throw new Error('Failed to reject thread');
       }
     } catch (error) {
       console.error('Error rejecting thread:', error);
-      alert('Failed to reject thread. Please try again.');
+      showModal('Failed to reject thread. Please try again.', 'error');
     }
   };
 

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from "../../components/header";
-import { Library, PartyPopper, Briefcase, Home, Gamepad2, MessageSquare, Eye } from 'lucide-react';
+import { Library, PartyPopper, Briefcase, Home, Gamepad2, MessageSquare } from 'lucide-react';
 import apiService from '../../services/api';
 import '../../styles/main.css';
 import type { Thread } from '../../types/api.types';
+import ThreadItem from '../../components/threadItem';
 
 export default function HomePage() {
     const [threads, setThreads] = useState<Thread[]>([]);
@@ -15,33 +16,6 @@ export default function HomePage() {
     });
     const [categoryStats, setCategoryStats] = useState<Record<string, { threads: number; posts: number }>>({});
     const [loading, setLoading] = useState(true);
-
-    const categoryMapping: Record<string, { label: string; description: string }> = {
-        "academic-help": {
-            label: "Academic Help",
-            description: "Study groups, homework help, and course discussions"
-        },
-        "events-activities": {
-            label: "Events & Activities",
-            description: "Events, clubs, and campus activities"
-        },
-        "career-internships": {
-            label: "Career & Internships",
-            description: "Job postings, internships, and career advice"
-        },
-        "housing-roommates": {
-            label: "Housing & Roommates",
-            description: "Find roommates and discuss housing options"
-        },
-        "gaming": {
-            label: "Gaming",
-            description: "Video games, board games, and gaming meetups"
-        },
-        "general-discussion": {
-            label: "General Discussion",
-            description: "Random topics and casual conversations"
-        }
-    };
 
     useEffect(() => {
         document.title = 'Home - DamIt';
@@ -81,10 +55,6 @@ export default function HomePage() {
         return categoryStats[categoryValue] || { threads: 0, posts: 0 };
     };
 
-    const getCategoryLabel = (categoryValue: string) => {
-        return categoryMapping[categoryValue]?.label || categoryValue;
-    };
-
     const getThreadInitials = (author: string | { username: string }) => {
         const username = typeof author === 'string' ? author : author.username;
         return username.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || username.slice(0, 2).toUpperCase();
@@ -102,10 +72,6 @@ export default function HomePage() {
         if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
         const days = Math.floor(hours / 24);
         return `${days} day${days > 1 ? 's' : ''} ago`;
-    };
-
-    const getAuthorName = (author: string | { username: string }) => {
-        return typeof author === 'string' ? author : author.username;
     };
 
     if (loading) {
@@ -212,32 +178,12 @@ export default function HomePage() {
                     ) : (
                         <div className="threads-list">
                             {threads.map((thread) => (
-                                <div key={thread.id} className="thread-item">
-                                    <div className="thread-main">
-                                        <div className="thread-avatar">{getThreadInitials(thread.author || 'Anonymous')}</div>
-                                        <div className="thread-content">
-                                            <h3>
-                                                <Link to={`/thread/${thread.id}`}>{thread.title}</Link>
-                                            </h3>
-                                            <p className="thread-preview">{thread.content.substring(0, 150)}{thread.content.length > 150 ? '...' : ''}</p>
-                                            <div className="thread-meta">
-                                                <span className="thread-author">{getAuthorName(thread.author || 'Anonymous')}</span>
-                                                <span className="thread-category">{getCategoryLabel(thread.category)}</span>
-                                                <span className="thread-time">{getTimeAgo(thread.createdAt)}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="thread-stats">
-                                        <div className="stat">
-                                            <MessageSquare size={20} />
-                                            <span className="stat-count">{thread.replies || 0}</span>
-                                        </div>
-                                        <div className="stat">
-                                            <Eye size={20} />
-                                            <span className="stat-count">{thread.views || 0}</span>
-                                        </div>
-                                    </div>
-                                </div>
+                                <ThreadItem
+                                key={thread.id}
+                                thread={thread}
+                                getTimeAgo={getTimeAgo}
+                                getThreadInitials={getThreadInitials as (author: string | { username: string } | undefined) => string}
+                            />
                             ))}
                         </div>
                     )}

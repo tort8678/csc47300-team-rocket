@@ -4,23 +4,14 @@ import { Plus } from 'lucide-react';
 import Header from "../../components/header";
 import Footer from "../../components/footer";
 import ThreadItem from "../../components/threadItem";
+import { useModal } from "../../contexts/ModalContext";
+import CustomSelect, { type SelectOptionGroup } from "../../components/CustomSelect";
 import '../../styles/threads.css';
 import type { Thread, ApiResponse } from "../../types/api.types";
 
 const API_BASE_URL = "http://localhost:3000/api";
 
-// Define category types
-interface CategoryOption {
-  value: string;
-  label: string;
-}
-
-interface CategoryGroup {
-  label: string;
-  options: CategoryOption[];
-}
-
-const categoryGroups: CategoryGroup[] = [
+const categoryGroups: SelectOptionGroup[] = [
   {
     label: "Academic",
     options: [
@@ -78,6 +69,7 @@ const getTimeAgo = (date: string | Date) => {
 };
 
 export default function Threads() {
+  const { showModal } = useModal();
   const [searchParams] = useSearchParams();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState(true);
@@ -277,7 +269,7 @@ export default function Threads() {
                       setFilter('liked');
                       setCurrentPage(1);
                     } else {
-                      alert('Please log in to view liked threads.');
+                      showModal('Please log in to view liked threads.', 'info');
                     }
                   }}
                   disabled={!currentUser}
@@ -292,7 +284,7 @@ export default function Threads() {
                       setFilter('my-threads');
                       setCurrentPage(1);
                     } else {
-                      alert('Please log in to view your threads.');
+                      showModal('Please log in to view your threads.', 'info');
                     }
                   }}
                   disabled={!currentUser}
@@ -301,45 +293,41 @@ export default function Threads() {
                 My Threads
               </button>
             </div>
-
+            <div style={{display: 'flex', gap: '20px'}}>
             <div className="category-filter">
               <label htmlFor="category">Category:</label>
-              <select
+              <CustomSelect
                   id="category"
                   value={selectedCategory}
-                  onChange={(e) => {
-                    setSelectedCategory(e.target.value);
+                  onChange={(value) => {
+                    setSelectedCategory(value);
                     setCurrentPage(1);
                   }}
-              >
-                <option value="all">All Categories</option>
-                {categoryGroups.map(group => (
-                    <optgroup key={group.label} label={group.label}>
-                      {group.options.map(option => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                      ))}
-                    </optgroup>
-                ))}
-              </select>
+                  optionGroups={categoryGroups}
+                  options={[{ value: 'all', label: 'All Categories' }]}
+                  placeholder="All Categories"
+                  width="250px"
+              />
             </div>
-
             <div className="sort-group">
               <label htmlFor="sort">Sort by:</label>
-              <select
+              <CustomSelect
                   id="sort"
                   value={sort}
-                  onChange={(e) => {
-                    setSort(e.target.value as any);
+                  onChange={(value) => {
+                    setSort(value as 'recent' | 'popular' | 'replies' | 'views');
                     setCurrentPage(1);
                   }}
-              >
-                <option value="recent">Most Recent</option>
-                <option value="popular">Most Popular</option>
-                <option value="replies">Most Replies</option>
-                <option value="views">Most Views</option>
-              </select>
+                  options={[
+                    { value: 'recent', label: 'Most Recent' },
+                    { value: 'popular', label: 'Most Popular' },
+                    { value: 'replies', label: 'Most Replies' },
+                    { value: 'views', label: 'Most Views' }
+                  ]}
+                  placeholder="Sort by"
+                  width="185px"
+              />
+            </div>
             </div>
           </div>
 

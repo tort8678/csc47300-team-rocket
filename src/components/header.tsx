@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import apiService from '../services/api';
+import { useModal } from '../contexts/ModalContext';
 import type { User } from '../types/api.types';
 import '../styles/main.css';
 
 const Header: React.FC = () => {
+    const { showModal } = useModal();
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
     const [isAdmin, setIsAdmin] = useState<boolean>(false);
     const navigate = useNavigate();
@@ -49,7 +51,7 @@ const Header: React.FC = () => {
     const handleLogout = () => {
         apiService.logout();
         setIsLoggedIn(false);
-        alert('You have been logged out.');
+        showModal('You have been logged out.', 'info');
         navigate('/login');
     };
 

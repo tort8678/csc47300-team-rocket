@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Check, X, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Thread, ApiResponse } from "../../types/api.types";
+import { useModal } from "../../contexts/ModalContext";
+import CustomSelect, { type SelectOptionGroup } from "../../components/CustomSelect";
 import '../../styles/adminDashboard.css';
 import Header from "../../components/header";
 const API_BASE_URL = "http://localhost:3000/api";
@@ -32,6 +34,48 @@ const StatCard = ({
   </div>
 );
 
+const categoryGroups: SelectOptionGroup[] = [
+  {
+    label: "Academic",
+    options: [
+      { value: "academic-help", label: "Academic Help" },
+      { value: "course-reviews", label: "Course Reviews" },
+      { value: "research-projects", label: "Research & Projects" }
+    ]
+  },
+  {
+    label: "Campus Life",
+    options: [
+      { value: "events-activities", label: "Events & Activities" },
+      { value: "clubs-organizations", label: "Clubs & Organizations" },
+      { value: "sports-fitness", label: "Sports & Fitness" }
+    ]
+  },
+  {
+    label: "Career & Life",
+    options: [
+      { value: "career-internships", label: "Career & Internships" },
+      { value: "housing-roommates", label: "Housing & Roommates" },
+      { value: "buy-sell", label: "Buy & Sell" }
+    ]
+  },
+  {
+    label: "Entertainment",
+    options: [
+      { value: "gaming", label: "Gaming" },
+      { value: "movies-tv", label: "Movies & TV" },
+      { value: "music", label: "Music" }
+    ]
+  },
+  {
+    label: "General",
+    options: [
+      { value: "general-discussion", label: "General Discussion" },
+      { value: "announcements", label: "Announcements" }
+    ]
+  }
+];
+
 const FilterBar = ({ filters, onFiltersChange }: any) => (
   <div className="filter-bar">
     <div className="filter-bar-content">
@@ -47,56 +91,20 @@ const FilterBar = ({ filters, onFiltersChange }: any) => (
         }
         className="filter-input"
       />
-      <select
+      <CustomSelect
         value={filters.category}
-        onChange={(e) =>
+        onChange={(value) =>
           onFiltersChange({
             ...filters,
-            category: e.target.value,
+            category: value,
           })
         }
+        optionGroups={categoryGroups}
+        options={[{ value: 'all', label: 'All Categories' }]}
+        placeholder="All Categories"
         className="filter-select"
-      >
-        <option value="all">All Categories</option>
-        <optgroup label="Academic">
-          <option value="academic-help">Academic Help</option>
-          <option value="course-reviews">Course Reviews</option>
-          <option value="research-projects">
-            Research & Projects
-          </option>
-        </optgroup>
-        <optgroup label="Campus Life">
-          <option value="events-activities">
-            Events & Activities
-          </option>
-          <option value="clubs-organizations">
-            Clubs & Organizations
-          </option>
-          <option value="sports-fitness">
-            Sports & Fitness
-          </option>
-        </optgroup>
-        <optgroup label="Career & Life">
-          <option value="career-internships">
-            Career & Internships
-          </option>
-          <option value="housing-roommates">
-            Housing & Roommates
-          </option>
-          <option value="buy-sell">Buy & Sell</option>
-        </optgroup>
-        <optgroup label="Entertainment">
-          <option value="gaming">Gaming</option>
-          <option value="movies-tv">Movies & TV</option>
-          <option value="music">Music</option>
-        </optgroup>
-        <optgroup label="General">
-          <option value="general-discussion">
-            General Discussion
-          </option>
-          <option value="announcements">Announcements</option>
-        </optgroup>
-      </select>
+        width="350px"
+      />
     </div>
   </div>
 );
@@ -213,6 +221,7 @@ const PostCard = ({
 };
 
 export default function App() {
+  const { showModal } = useModal();
   const [posts, setPosts] = useState<ThreadWithAuthor[]>([]);
   const [stats, setStats] = useState({
     total: 0,
@@ -391,7 +400,7 @@ export default function App() {
       await fetchStats();
     } catch (error) {
       console.error("Error approving thread:", error);
-      alert("Failed to approve thread. Please try again.");
+      showModal("Failed to approve thread. Please try again.", 'error');
     }
   };
 
@@ -418,7 +427,7 @@ export default function App() {
       await fetchStats();
     } catch (error) {
       console.error("Error rejecting thread:", error);
-      alert("Failed to reject thread. Please try again.");
+      showModal("Failed to reject thread. Please try again.", 'error');
     }
   };
 

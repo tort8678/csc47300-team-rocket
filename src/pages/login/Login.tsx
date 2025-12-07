@@ -37,7 +37,6 @@ export default function Login() {
             });
 
             if (response.success) {
-                alert('Login successful!');
                 navigate("/");
             } else {
                 setError(response.message || 'Login failed. Please try again.');

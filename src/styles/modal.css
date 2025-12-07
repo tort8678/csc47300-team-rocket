@@ -1,15 +1,13 @@
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 10000;
-  animation: fadeIn 0.2s ease-in-out;
+  background: rgba(0, 0, 0, 0.3);
+  justify-content: center;
+  align-items: center;
+  animation: .2s 
+ease-in-out fadeIn;
+  display: flex;
+  position: fixed;
+  inset: 0;
 }
 
 @keyframes fadeIn {
@@ -22,17 +20,20 @@
 }
 
 .modal-content {
-  background: #1a1a2e;
-  border: 1px solid #2d2d44;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid #2D2D2B;
+  border: 1px solid #e1e4e8;
   border-radius: 12px;
-  padding: 2rem;
-  max-width: 500px;
   width: 90%;
+  max-width: 400px;
   max-height: 90vh;
-  overflow-y: auto;
+  padding: 2rem;
+  animation: .3s 
+ease-out slideUp;
   position: relative;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  animation: slideUp 0.3s ease-out;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px #00000080;
+  backdrop-filter: blur(15px);
 }
 
 @keyframes slideUp {
@@ -103,58 +104,15 @@
   gap: 1rem;
 }
 
-.modal-button {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  min-width: 80px;
-}
-
-.modal-button-info {
-  background: #4a9eff;
-  color: #ffffff;
-}
-
-.modal-button-info:hover {
-  background: #3a8eef;
-  transform: translateY(-1px);
-}
-
-.modal-button-success {
-  background: #4caf50;
-  color: #ffffff;
-}
-
-.modal-button-success:hover {
-  background: #45a049;
-  transform: translateY(-1px);
-}
-
-.modal-button-error {
-  background: #f44336;
-  color: #ffffff;
-}
-
-.modal-button-error:hover {
-  background: #da190b;
-  transform: translateY(-1px);
-}
-
-.modal-button-warning {
-  background: #ff9800;
-  color: #ffffff;
-}
-
-.modal-button-warning:hover {
-  background: #e68900;
-  transform: translateY(-1px);
-}
-
 .modal-button:active {
   transform: translateY(0);
 }
 
+.modal-actions .btn {
+  width: 120px;
+  box-sizing: border-box;
+}
+
+.modal-message.header-message {
+  font-size: 1.1rem;
+}

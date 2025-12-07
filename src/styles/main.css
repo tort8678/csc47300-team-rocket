@@ -42,7 +42,7 @@ header {
     box-shadow: var(--box-shadow);
     position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 10000;
     backdrop-filter: blur(30px);
     height: 120px;
 }

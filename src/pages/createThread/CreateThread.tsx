@@ -4,18 +4,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Header from "../../components/header";
 import Footer from "../../components/footer";
 import apiService from '../../services/api';
+import { useModal } from '../../contexts/ModalContext';
+import CustomSelect, { type SelectOptionGroup } from '../../components/CustomSelect';
 import '../../styles/createThread.css';
 import { SendHorizontal, X, LoaderCircle, Upload, Trash, Save, Paperclip } from 'lucide-react';
 
-type CategoryGroup = {
-    label: string;
-    options: Array<{
-        value: string;
-        label: string;
-    }>;
-};
-
-const categoryGroups: CategoryGroup[] = [
+const categoryGroups: SelectOptionGroup[] = [
     {
         label: "Academic",
         options: [
@@ -58,6 +52,7 @@ const categoryGroups: CategoryGroup[] = [
 ];
 
 export default function CreateThread() {
+    const { showModal } = useModal();
     const navigate = useNavigate();
     const { threadId } = useParams<{ threadId?: string }>();
     const isEditMode = !!threadId;
@@ -77,7 +72,7 @@ export default function CreateThread() {
         document.title = isEditMode ? 'Edit Thread - DamIt' : 'Create Thread - DamIt';
         const token = localStorage.getItem('token');
         if (!token) {
-            alert('Please log in to create a thread.');
+            showModal('Please log in to create a thread.', 'info');
             navigate('/login');
             return;
         }
@@ -123,12 +118,12 @@ export default function CreateThread() {
                     setAttachmentNames(names);
                 }
             } else {
-                alert('Failed to load thread data.');
+                showModal('Failed to load thread data.', 'error');
                 navigate('/threads');
             }
         } catch (error) {
             console.error('Error loading thread:', error);
-            alert('Failed to load thread data.');
+            showModal('Failed to load thread data.', 'error');
             navigate('/threads');
         } finally {
             setLoadingThread(false);
@@ -151,7 +146,7 @@ export default function CreateThread() {
         setLoading(true);
 
         if (!formData.category || !formData.title.trim() || !formData.content.trim()) {
-            alert('Please fill in all required fields.');
+            showModal('Please fill in all required fields.', 'warning');
             setLoading(false);
             return;
         }
@@ -159,7 +154,7 @@ export default function CreateThread() {
         try {
             const token = localStorage.getItem('token');
             if (!token) {
-                alert('Please log in to continue.');
+                showModal('Please log in to continue.', 'info');
                 navigate('/login');
                 return;
             }
@@ -194,7 +189,7 @@ export default function CreateThread() {
 
                     const data = await response.json();
                     if (data.success) {
-                        alert('Thread updated successfully!');
+                        showModal('Thread updated successfully!', 'success');
                         navigate(`/thread/${threadId}`);
                     } else {
                         throw new Error(data.message || 'Failed to update thread');
@@ -224,7 +219,7 @@ export default function CreateThread() {
                         
                         const data = await response.json();
                         if (data.success) {
-                            alert('Thread updated successfully!');
+                            showModal('Thread updated successfully!', 'success');
                             navigate(`/thread/${threadId}`);
                         } else {
                             throw new Error(data.message || 'Failed to update thread');
@@ -237,7 +232,7 @@ export default function CreateThread() {
                         });
 
                         if (response.success) {
-                            alert('Thread updated successfully!');
+                            showModal('Thread updated successfully!', 'success');
                             navigate(`/thread/${threadId}`);
                         } else {
                             throw new Error(response.message || 'Failed to update thread');
@@ -274,7 +269,7 @@ export default function CreateThread() {
 
                     const data = await response.json();
                     if (data.success) {
-                        alert('Thread created successfully! It will be reviewed by an admin before being published.');
+                        showModal('Thread created successfully! It will be reviewed by an admin before being published.', 'success');
                         navigate('/threads');
                     } else {
                         throw new Error(data.message || 'Failed to create thread');
@@ -288,7 +283,7 @@ export default function CreateThread() {
                     });
 
                     if (response.success) {
-                        alert('Thread created successfully! It will be reviewed by an admin before being published.');
+                        showModal('Thread created successfully! It will be reviewed by an admin before being published.', 'success');
                         navigate('/threads');
                     } else {
                         throw new Error(response.message || 'Failed to create thread');
@@ -297,7 +292,7 @@ export default function CreateThread() {
             }
         } catch (error: any) {
             console.error('Error saving thread:', error);
-            alert(error.message || 'An error occurred while saving the thread. Please try again.');
+            showModal(error.message || 'An error occurred while saving the thread. Please try again.', 'error');
         } finally {
             setLoading(false);
         }
@@ -364,24 +359,15 @@ export default function CreateThread() {
                         <div className="form-group">
                             <label htmlFor="category">Category</label>
                             <p className="helper-text">Choose the most relevant category to help others find your post</p>
-                            <select
+                            <CustomSelect
                                 id="category"
                                 name="category"
                                 required
                                 value={formData.category}
-                                onChange={handleInputChange}
-                            >
-                                <option value="">Select a category</option>
-                                {categoryGroups.map(group => (
-                                    <optgroup key={group.label} label={group.label}>
-                                        {group.options.map(option => (
-                                            <option key={option.value} value={option.value}>
-                                                {option.label}
-                                            </option>
-                                        ))}
-                                    </optgroup>
-                                ))}
-                            </select>
+                                onChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                                optionGroups={categoryGroups}
+                                placeholder="Select a category"
+                            />
                         </div>
 
                         <div className="form-group">

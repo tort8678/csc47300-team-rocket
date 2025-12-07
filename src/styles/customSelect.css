@@ -1,0 +1,132 @@
+.custom-select {
+  width: auto;
+  padding: 0 1rem;
+  position: relative
+}
+
+.custom-select-trigger {
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+  background: #00000080;
+  border: 1px solid #ffffff26;
+  border-radius: 12px;
+  outline: none;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
+  width: 100%;
+  height: 50px;
+  padding: 0 1rem;
+  font-family: unset;
+  font-size: 15px;
+  transition: all .2s;
+  display: flex;
+  position: relative;
+  right: 1rem
+}
+
+.custom-select-trigger:hover:not(:disabled) {
+  background: #000000b3
+}
+
+.custom-select-trigger:focus {
+  background: #000000b3;
+  outline: none
+}
+
+.custom-select-trigger.disabled,.custom-select-trigger:disabled {
+  opacity: .5;
+  cursor: not-allowed
+}
+
+.custom-select-trigger .placeholder {
+  color: #ffffffb3
+}
+
+.custom-select.open .custom-select-trigger {
+  background: #000000b3
+}
+
+.custom-select-dropdown {
+  z-index: 9999;
+  background: #000c;
+  border: 1px solid #ffffff26;
+  border-radius: 12px;
+  max-height: 300px;
+  animation: .2s ease-out slideDown;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px #0000004d
+}
+
+@keyframes slideDown {
+  0% {
+      opacity: 0;
+      transform: translateY(-10px)
+  }
+
+  to {
+      opacity: 1;
+      transform: translateY(0)
+  }
+}
+
+.custom-select-list {
+  margin: 0;
+  list-style: none
+}
+
+.custom-select-group {
+  margin: 0;
+  padding: 0;
+  list-style: none
+}
+
+.custom-select-group-label {
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: #fff;
+  border-bottom: 1px solid #ffffff0d;
+  padding: .5rem 1rem;
+  font-size: .75rem;
+  font-weight: bold;
+}
+
+.custom-select-group-options {
+  margin: 0;
+  padding: 0;
+  list-style: none
+}
+
+.custom-select-option {
+  cursor: pointer;
+  color: #fff;
+  background: 0 0;
+  align-items: center;
+  padding: .75rem 1rem;
+  font-size: 15px;
+  transition: all .15s;
+  display: flex
+}
+
+.custom-select-option:hover,.custom-select-option.focused {
+  color: #fff;
+  background: #fff3;
+}
+
+.custom-select-option.selected {
+  color: #fff;
+  background: #fff3;
+  font-weight: 500
+}
+
+.custom-select-option.selected:after {
+  content: "✓";
+  color: #fff;
+  margin-left: auto;
+  font-weight: 700
+}
+
+.custom-select-dropdown::-webkit-scrollbar {
+  display: none;
+}

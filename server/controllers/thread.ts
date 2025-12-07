@@ -28,6 +28,7 @@ export class ThreadController {
       const category = req.query.category as string;
       const authorId = req.query.authorId as string;
 
+
       const skip = (page - 1) * limit;
 
       // Build query - only show approved threads to regular users
@@ -56,9 +57,6 @@ export class ThreadController {
       let sortOption: any = { createdAt: -1 };
       if (sort === 'popular') {
         sortOption = { likes: -1, createdAt: -1 };
-      } else if (sort === 'replies') {
-        // This would require aggregation, simplified for now
-        sortOption = { createdAt: -1 };
       } else if (sort === 'views') {
         sortOption = { views: -1, createdAt: -1 };
       }
@@ -108,6 +106,11 @@ export class ThreadController {
         })
       );
 
+
+      if (sort === 'replies') {
+        threadsWithCounts.sort((a, b) => b.replies - a.replies);
+      }
+      
       const total = await ThreadModel.countDocuments(query);
 
       res.json({

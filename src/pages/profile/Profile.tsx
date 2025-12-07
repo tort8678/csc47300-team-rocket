@@ -17,6 +17,7 @@ import Header from "../../components/header";
 import Footer from "../../components/footer";
 import ThreadItem from "../../components/threadItem";
 import apiService from "../../services/api";
+import { useModal } from "../../contexts/ModalContext";
 import '../../styles/main.css';
 import '../../styles/profile.css';
 import type {Thread} from '../../types/api.types';
@@ -30,6 +31,7 @@ interface UserProfile extends ApiUser {
 }
 
 export default function Profile() {
+    const { showModal } = useModal();
     const navigate = useNavigate();
     const { username } = useParams<{ username?: string }>();
     const isOwnProfile = !username || (localStorage.getItem('user') && username === JSON.parse(localStorage.getItem('user') || '{}').username);
@@ -54,7 +56,7 @@ export default function Profile() {
         if (isOwnProfile) {
             const token = localStorage.getItem('token');
             if (!token) {
-                alert('Please log in to view your profile.');
+                showModal('Please log in to view your profile.', 'info');
                 navigate('/login');
                 return;
             }
@@ -96,7 +98,7 @@ export default function Profile() {
                     }, 100);
                 }
             } else {
-                alert('Failed to load profile. Please try again.');
+                showModal('Failed to load profile. Please try again.', 'error');
                 if (isOwnProfile) {
                     navigate('/login');
                 } else {
@@ -105,7 +107,7 @@ export default function Profile() {
             }
         } catch (error) {
             console.error('Error loading profile:', error);
-            alert('Failed to load profile. Please try again.');
+            showModal('Failed to load profile. Please try again.', 'error');
             if (isOwnProfile) {
                 navigate('/login');
             } else {
@@ -277,13 +279,13 @@ export default function Profile() {
                 const updatedUser = response.data as UserProfile;
                 setUser(updatedUser);
                 setIsEditing(false);
-                alert('Profile updated successfully!');
+                showModal('Profile updated successfully!', 'success');
             } else {
-                alert('Failed to update profile. Please try again.');
+                showModal('Failed to update profile. Please try again.', 'error');
             }
         } catch (error) {
             console.error('Error updating profile:', error);
-            alert('Failed to update profile. Please try again.');
+            showModal('Failed to update profile. Please try again.', 'error');
         }
     };
 

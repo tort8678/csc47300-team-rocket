@@ -1,23 +1,29 @@
 import { useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 import '../styles/modal.css';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onConfirm?: () => void;
   title?: string;
   message: string;
   type?: 'info' | 'success' | 'error' | 'warning';
   showCloseButton?: boolean;
+  isConfirm?: boolean;
+  confirmText?: string;
+  cancelText?: string;
 }
 
 export default function Modal({ 
   isOpen, 
   onClose, 
+  onConfirm,
   title, 
   message, 
   type = 'info',
-  showCloseButton = true 
+  showCloseButton = true,
+  isConfirm = false,
 }: ModalProps) {
   useEffect(() => {
     if (isOpen) {
@@ -55,14 +61,36 @@ export default function Modal({
         {title && (
           <h2 className={`modal-title modal-title-${type}`}>{title}</h2>
         )}
-        <p className="modal-message">{message}</p>
+        <p className={`modal-message ${(!title ? 'header-message' : '')}`}>{message}</p>
         <div className="modal-actions">
-          <button 
-            className={`modal-button modal-button-${type}`}
-            onClick={onClose}
-          >
-            OK
-          </button>
+          {isConfirm ? (
+            <>
+              <button 
+                className="btn btn-secondary"
+                onClick={onClose}
+              >
+                <X/>
+              </button>
+              <button 
+                className="btn btn-primary"
+                onClick={() => {
+                  if (onConfirm) {
+                    onConfirm();
+                  }
+                  onClose();
+                }}
+              >
+                <Check/>
+              </button>
+            </>
+          ) : (
+            <button 
+              className="btn btn-primary"
+              onClick={onClose}
+            >
+              <Check/>
+            </button>
+          )}
         </div>
       </div>
     </div>
