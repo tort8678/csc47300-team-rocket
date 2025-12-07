@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import '../styles/customSelect.css';
 
 export interface SelectOption {
@@ -232,6 +232,7 @@ export default function CustomSelect({
                       aria-selected={value === option.value}
                     >
                       {option.label}
+                      {value === option.value ? <Check size={18} /> : ''}
                     </li>
                   );
                 })}

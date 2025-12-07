@@ -117,7 +117,9 @@
 .custom-select-option.selected {
   color: #fff;
   background: #fff3;
-  font-weight: 500
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
 }
 
 .custom-select-option.selected:after {

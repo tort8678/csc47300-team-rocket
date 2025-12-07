@@ -2,14 +2,12 @@ import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from 'react-router-dom';
 import apiService from "../../services/api";
-import { useModal } from "../../contexts/ModalContext";
 import '../../styles/main.css';
 import '../../styles/login.css';
 import Header from "../../components/header";
 import Footer from "../../components/footer";
 
 export default function Register() {
-    const { showModal } = useModal();
     const navigate = useNavigate();
     const [userInfo, setUserInfo] = useState({
         email: '',
