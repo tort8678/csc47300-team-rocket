@@ -65,4 +65,22 @@ export class UserController {
         }
     }
 
+    static async getAllUsers(req: Request, res: Response) {
+        try {
+            const users = await UserService.getAllUsers();
+            res.json(users);
+        } catch (error) {
+            res.status(500).json({ message: "Server error", error });
+        }
+    }
+
+    static async addThreadToUser(req: Request, res: Response) {
+        const { userId, threadId } = req.body;
+        try{
+            res.json( await UserService.AddThreadToUser(userId,threadId));
+             
+        } catch (error){
+            res.status(500).json({ message: "Server error", error})
+        }
+    }
 }
