@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Plus } from 'lucide-react';
 import Header from "../../components/header";
 import Footer from "../../components/footer";
 import ThreadItem from "../../components/threadItem";
@@ -359,7 +359,7 @@ export default function Threads() {
                     disabled={currentPage === 1}
                     onClick={() => handlePageChange(currentPage - 1)}
                 >
-                  Previous
+                  <ArrowLeft size={25} />
                 </button>
 
                 {getPageNumbers().map(page => (
@@ -377,7 +377,7 @@ export default function Threads() {
                     disabled={currentPage === totalPages}
                     onClick={() => handlePageChange(currentPage + 1)}
                 >
-                  Next
+                  <ArrowRight size={25} />
                 </button>
               </div>
           )}

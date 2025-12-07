@@ -162,7 +162,7 @@
   grid-template-columns: repeat(auto-fit, 360px);
   gap: 1.5rem;
   display: grid;
-  justify-content: space-between;
+  justify-content: start;
 }
 
 .post-card {
