@@ -11,7 +11,8 @@ import {
     Check,
     X,
     SquarePen,
-    Heart
+    Heart,
+    ArrowDown
 } from 'lucide-react';
 import Header from "../../components/header";
 import Footer from "../../components/footer";
@@ -545,15 +546,7 @@ export default function Profile() {
                                         {userThreads.length > 5 && displayedThreads.length < userThreads.length && (
                                             <div className="load-more">
                                                 <button className="load-more-btn" onClick={handleLoadMoreThreads}>
-                                                    Load More ({userThreads.length - displayedThreads.length} remaining)
-                                                </button>
-                                            </div>
-                                        )}
-                                        {/* Show "All threads loaded" only if there were more than 5 threads initially and now all are displayed */}
-                                        {userThreads.length > 5 && displayedThreads.length === userThreads.length && (
-                                            <div className="load-more">
-                                                <button className="load-more-btn" disabled style={{opacity: 0.5, cursor: 'not-allowed'}}>
-                                                    All threads loaded
+                                                    <ArrowDown size={25} />
                                                 </button>
                                             </div>
                                         )}
@@ -597,15 +590,7 @@ export default function Profile() {
                                         {userComments.length > 5 && displayedComments.length < userComments.length && (
                                             <div className="load-more">
                                                 <button className="load-more-btn" onClick={handleLoadMoreComments}>
-                                                    Load More ({userComments.length - displayedComments.length} remaining)
-                                                </button>
-                                            </div>
-                                        )}
-                                        {/* Show "All comments loaded" only if there were more than 5 comments initially and now all are displayed */}
-                                        {userComments.length > 5 && displayedComments.length === userComments.length && (
-                                            <div className="load-more">
-                                                <button className="load-more-btn" disabled style={{opacity: 0.5, cursor: 'not-allowed'}}>
-                                                    All comments loaded
+                                                    <ArrowDown size={25} />
                                                 </button>
                                             </div>
                                         )}
