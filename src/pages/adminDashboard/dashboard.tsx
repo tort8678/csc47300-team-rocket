@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Check, X, RefreshCw, Users, FileText, UserPlus, Ban, UserCheck, Trash2 } from "lucide-react";
+import { Check, X, RefreshCw, Users, FileText, UserPlus, Ban, UserCheck, Trash2, ArrowLeft, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Thread, ApiResponse, User } from "../../types/api.types";
 import { useModal } from "../../contexts/ModalContext";
@@ -110,6 +110,86 @@ const FilterBar = ({ filters, onFiltersChange }: any) => (
     </div>
   </div>
 );
+
+const Pagination = ({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) => {
+  if (totalPages <= 1) return null;
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+    
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 5; i++) {
+          pages.push(i);
+        }
+      } else if (currentPage >= totalPages - 2) {
+        for (let i = totalPages - 4; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        for (let i = currentPage - 2; i <= currentPage + 2; i++) {
+          pages.push(i);
+        }
+      }
+    }
+    
+    return pages;
+  };
+
+  return (
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: '0.5rem',
+      marginTop: '1.5rem',
+      marginBottom: '1rem'
+    }}>
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="page-btn"
+      >
+        <ArrowLeft size={25} />
+      </button>
+      
+      {getPageNumbers().map((page, index) => (
+        page === '...' ? (
+          <span key={`ellipsis-${index}`} style={{ color: 'white', padding: '0 0.5rem' }}>...</span>
+        ) : (
+          <button
+            key={page}
+            onClick={() => onPageChange(page as number)}
+            className={`page-btn ${currentPage === page ? 'active' : ''}`}
+          >
+            {page}
+          </button>
+        )
+      ))}
+      
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="page-btn"
+      >
+        <ArrowRight size={25} />
+      </button>
+    </div>
+  );
+};
 
 const PostCard = ({
   post,
@@ -243,6 +323,19 @@ export default function App() {
   const [userFilters, setUserFilters] = useState({
     search: "",
   });
+  // Pagination state
+  const [threadsPagination, setThreadsPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
+  const [usersPagination, setUsersPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminLevel2, setIsAdminLevel2] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -352,7 +445,7 @@ export default function App() {
     return 'user';
   };
 
-  const fetchPendingThreads = async () => {
+  const fetchPendingThreads = async (page: number = threadsPagination.page) => {
     try {
       setLoading(true);
       const token = getAuthToken();
@@ -361,7 +454,7 @@ export default function App() {
         return;
       }
       
-      const response = await fetch(`${API_BASE_URL}/threads/admin/pending?limit=100`, {
+      const response = await fetch(`${API_BASE_URL}/threads/admin/pending?page=${page}&limit=${threadsPagination.limit}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -373,9 +466,12 @@ export default function App() {
         throw new Error(errorData.message || "Failed to fetch pending threads");
       }
 
-      const data: ApiResponse<ThreadWithAuthor[]> = await response.json();
+      const data: ApiResponse<ThreadWithAuthor[]> & { pagination?: { page: number; limit: number; total: number; totalPages: number } } = await response.json();
       if (data.success && data.data) {
         setPosts(data.data);
+        if (data.pagination) {
+          setThreadsPagination(data.pagination);
+        }
       } else {
         console.error("Failed to fetch pending threads:", data);
       }
@@ -415,13 +511,16 @@ export default function App() {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page: number = usersPagination.page) => {
     try {
       setUsersLoading(true);
       // Include inactive (banned) users for admins
-      const response = await apiService.getAdminUsers({ page: 1, limit: 100, includeInactive: true });
+      const response = await apiService.getAdminUsers({ page, limit: usersPagination.limit, includeInactive: true });
       if (response.success && response.data) {
         setUsers(response.data);
+        if (response.pagination) {
+          setUsersPagination(response.pagination);
+        }
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -435,13 +534,22 @@ export default function App() {
     // Only fetch if admin check is complete and user is admin
     if (!checkingAuth && isAdmin) {
       if (activeTab === 'threads') {
-        fetchPendingThreads();
+        fetchPendingThreads(1);
         fetchStats();
       } else if (activeTab === 'users') {
-        fetchUsers();
+        fetchUsers(1);
       }
     }
   }, [checkingAuth, isAdmin, activeTab]);
+
+  // Reset pagination when switching tabs
+  useEffect(() => {
+    if (activeTab === 'threads') {
+      setThreadsPagination(prev => ({ ...prev, page: 1 }));
+    } else if (activeTab === 'users') {
+      setUsersPagination(prev => ({ ...prev, page: 1 }));
+    }
+  }, [activeTab]);
 
   const handleApprove = async (postId: string) => {
     try {
@@ -461,8 +569,8 @@ export default function App() {
         throw new Error("Failed to approve thread");
       }
 
-      // Refresh the list and stats
-      await fetchPendingThreads();
+      // Refresh the list and stats (stay on current page)
+      await fetchPendingThreads(threadsPagination.page);
       await fetchStats();
     } catch (error) {
       console.error("Error approving thread:", error);
@@ -488,8 +596,8 @@ export default function App() {
         throw new Error("Failed to reject thread");
       }
 
-      // Refresh the list and stats
-      await fetchPendingThreads();
+      // Refresh the list and stats (stay on current page)
+      await fetchPendingThreads(threadsPagination.page);
       await fetchStats();
     } catch (error) {
       console.error("Error rejecting thread:", error);
@@ -534,7 +642,7 @@ export default function App() {
       const response = await apiService.banUser(banUserId, duration);
       if (response.success) {
         showModal(response.message || 'User banned successfully.', 'success');
-        await fetchUsers();
+        await fetchUsers(usersPagination.page);
       } else {
         showModal(response.message || 'Failed to ban user.', 'error');
       }
@@ -556,7 +664,7 @@ export default function App() {
       const response = await apiService.unbanUser(userId);
       if (response.success) {
         showModal('User unbanned successfully.', 'success');
-        await fetchUsers();
+        await fetchUsers(usersPagination.page);
       } else {
         showModal(response.message || 'Failed to unban user.', 'error');
       }
@@ -574,7 +682,7 @@ export default function App() {
       const response = await apiService.deleteAdminUser(userId);
       if (response.success) {
         showModal('User deleted successfully.', 'success');
-        await fetchUsers();
+        await fetchUsers(usersPagination.page);
       } else {
         showModal(response.message || 'Failed to delete user.', 'error');
       }
@@ -592,7 +700,7 @@ export default function App() {
         showModal('Admin user created successfully.', 'success');
         setShowCreateAdminForm(false);
         setCreateAdminData({ username: '', email: '', password: '', role: 'admin_level_1' });
-        await fetchUsers();
+        await fetchUsers(usersPagination.page);
       } else {
         showModal(response.message || 'Failed to create admin user.', 'error');
       }
@@ -725,7 +833,7 @@ export default function App() {
                 <h2 className="section-title">Pending Review</h2>
                 <button
                   onClick={() => {
-                    fetchPendingThreads();
+                    fetchPendingThreads(1);
                     fetchStats();
                   }}
                   className="admin-refresh-btn"
@@ -755,6 +863,14 @@ export default function App() {
                       No pending posts to review
                     </div>
                   )}
+                  <Pagination
+                    currentPage={threadsPagination.page}
+                    totalPages={threadsPagination.totalPages}
+                    onPageChange={(page) => {
+                      setThreadsPagination(prev => ({ ...prev, page }));
+                      fetchPendingThreads(page);
+                    }}
+                  />
                 </>
               )}
             </div>
@@ -776,7 +892,7 @@ export default function App() {
                   </button>
                 )}
                 <button
-                  onClick={fetchUsers}
+                  onClick={() => fetchUsers(1)}
                   className="admin-refresh-btn"
                 >
                   <RefreshCw size={18} />
@@ -1002,6 +1118,14 @@ export default function App() {
                     </table>
                   </div>
                 )}
+                <Pagination
+                  currentPage={usersPagination.page}
+                  totalPages={usersPagination.totalPages}
+                  onPageChange={(page) => {
+                    setUsersPagination(prev => ({ ...prev, page }));
+                    fetchUsers(page);
+                  }}
+                />
               </>
             )}
           </>

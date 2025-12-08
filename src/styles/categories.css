@@ -96,13 +96,16 @@
 }
 
 .latest-post {
-    display: flex;
+    display: inline;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 0.5rem;
     font-size: 0.875rem;
     color: rgba(255, 255, 255, 0.8);
     margin-top: 0.75rem;
+}
+
+.latest-post > span, .latest-post > a {
+    margin-left: 2.5px;
+    margin-right: 2.5px;
 }
 
 .latest-label {

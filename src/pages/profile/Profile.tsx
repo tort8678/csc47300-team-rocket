@@ -164,10 +164,8 @@ export default function Profile() {
 
     const loadOtherUserThreads = async (username: string) => {
         try {
-            console.log('Loading other user threads:', username);
             if (!username) return;
             const response = await apiService.getUserThreads(username, 1, 100);
-            console.log('User threads response:', response);
             if (response.success && response.data && Array.isArray(response.data)) {
                 const threads = response.data.map((thread: any) => ({
                     id: thread.id,
@@ -181,34 +179,26 @@ export default function Profile() {
                     status: thread.status,
                     createdAt: thread.createdAt
                 }));
-                console.log('Setting user threads:', threads);
                 setUserThreads(threads);
                 setDisplayedThreads(threads.slice(0, 5));
             } else {
-                console.log('No threads found or invalid response:', response);
             }
         } catch (error) {
-            console.error('Error loading user threads:', error);
         }
     };
 
     const loadOtherUserComments = async (username: string) => {
         try {
             if (!username) return;
-            console.log('Loading other user comments for:', username);
             const response = await apiService.getUserComments(username, 1, 100);
-            console.log('User comments response:', response);
             if (response.success && response.data && Array.isArray(response.data)) {
-                console.log('Setting user comments:', response.data);
                 setUserComments(response.data);
                 setDisplayedComments(response.data.slice(0, 5));
             } else {
-                console.log('No comments found or invalid response:', response);
                 setUserComments([]);
                 setDisplayedComments([]);
             }
         } catch (error) {
-            console.error('Error loading user comments:', error);
             setUserComments([]);
             setDisplayedComments([]);
         }
@@ -271,13 +261,10 @@ export default function Profile() {
                     const username = userResponse.data.username;
                     
                     const response = await apiService.getUserComments(username, 1, 100);
-                    console.log('Own comments response:', response);
                     if (response.success && response.data && Array.isArray(response.data)) {
-                        console.log('Setting own comments:', response.data);
                         setUserComments(response.data);
                         setDisplayedComments(response.data.slice(0, 5));
                     } else {
-                        console.log('No comments found or invalid response:', response);
                         setUserComments([]);
                         setDisplayedComments([]);
                     }

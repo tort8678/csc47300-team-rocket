@@ -119,12 +119,6 @@ export class CommentController {
       if (isFormData) {
         // FormData request - fields come as strings from multer
         // Multer populates req.body with form fields
-        console.log('FormData request detected');
-        console.log('req.body:', req.body);
-        console.log('req.body type:', typeof req.body);
-        console.log('req.body keys:', req.body ? Object.keys(req.body) : 'no body');
-        console.log('req.body.content:', req.body?.content);
-        console.log('files:', (req as any).files);
         
         if (!req.body) {
           console.error('req.body is missing for FormData request');
@@ -137,7 +131,6 @@ export class CommentController {
         
         // Extract content from FormData
         const contentValue = req.body.content;
-        console.log('contentValue:', contentValue, 'type:', typeof contentValue);
         
         if (!contentValue || (typeof contentValue === 'string' && contentValue.trim().length === 0)) {
           console.error('Content is missing or empty');
