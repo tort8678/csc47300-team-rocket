@@ -72,7 +72,7 @@ export default function CreateThread() {
         document.title = isEditMode ? 'Edit Thread - DamIt' : 'Create Thread - DamIt';
         const token = localStorage.getItem('token');
         if (!token) {
-            showModal('Please log in to create a thread.', 'info');
+            showModal('Please log in to create a thread.', 'info', 'Login Required');
             navigate('/login');
             return;
         }
@@ -118,12 +118,12 @@ export default function CreateThread() {
                     setAttachmentNames(names);
                 }
             } else {
-                showModal('Failed to load thread data.', 'error');
+                showModal('Failed to load thread data.', 'error', 'Error');
                 navigate('/threads');
             }
         } catch (error) {
             console.error('Error loading thread:', error);
-            showModal('Failed to load thread data.', 'error');
+            showModal('Failed to load thread data.', 'error', 'Error');
             navigate('/threads');
         } finally {
             setLoadingThread(false);
@@ -146,7 +146,7 @@ export default function CreateThread() {
         setLoading(true);
 
         if (!formData.category || !formData.title.trim() || !formData.content.trim()) {
-            showModal('Please fill in all required fields.', 'warning');
+            showModal('Please fill in all required fields.', 'warning', 'Missing Fields');
             setLoading(false);
             return;
         }
@@ -154,7 +154,7 @@ export default function CreateThread() {
         try {
             const token = localStorage.getItem('token');
             if (!token) {
-                showModal('Please log in to continue.', 'info');
+                showModal('Please log in to continue.', 'info', 'Login Required');
                 navigate('/login');
                 return;
             }
@@ -189,7 +189,7 @@ export default function CreateThread() {
 
                     const data = await response.json();
                     if (data.success) {
-                        showModal('Thread updated successfully!', 'success');
+                        showModal('Thread updated.', 'success', 'Success');
                         navigate(`/thread/${threadId}`);
                     } else {
                         throw new Error(data.message || 'Failed to update thread');
@@ -219,7 +219,7 @@ export default function CreateThread() {
                         
                         const data = await response.json();
                         if (data.success) {
-                            showModal('Thread updated successfully!', 'success');
+                            showModal('Thread updated.', 'success', 'Success');
                             navigate(`/thread/${threadId}`);
                         } else {
                             throw new Error(data.message || 'Failed to update thread');
@@ -232,7 +232,7 @@ export default function CreateThread() {
                         });
 
                         if (response.success) {
-                            showModal('Thread updated successfully!', 'success');
+                            showModal('Thread updated.', 'success', 'Success');
                             navigate(`/thread/${threadId}`);
                         } else {
                             throw new Error(response.message || 'Failed to update thread');
@@ -269,7 +269,7 @@ export default function CreateThread() {
 
                     const data = await response.json();
                     if (data.success) {
-                        showModal('Thread created successfully! It will be reviewed by an admin before being published.', 'success');
+                        showModal('Thread created. Awaiting admin review.', 'success', 'Success');
                         navigate('/threads');
                     } else {
                         throw new Error(data.message || 'Failed to create thread');
@@ -283,7 +283,7 @@ export default function CreateThread() {
                     });
 
                     if (response.success) {
-                        showModal('Thread created successfully! It will be reviewed by an admin before being published.', 'success');
+                        showModal('Thread created. Awaiting admin review.', 'success', 'Success');
                         navigate('/threads');
                     } else {
                         throw new Error(response.message || 'Failed to create thread');
@@ -292,7 +292,7 @@ export default function CreateThread() {
             }
         } catch (error: any) {
             console.error('Error saving thread:', error);
-            showModal(error.message || 'An error occurred while saving the thread. Please try again.', 'error');
+            showModal(error.message || 'Failed to save thread.', 'error', 'Error');
         } finally {
             setLoading(false);
         }

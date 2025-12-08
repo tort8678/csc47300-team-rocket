@@ -222,7 +222,7 @@ export default function ThreadDetail() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        showModal('Please log in to post a comment.', 'error');
+        showModal('Please log in to post a comment.', 'error', 'Login Required');
         return;
       }
 
@@ -291,7 +291,7 @@ export default function ThreadDetail() {
       }
     } catch (err: any) {
       console.error('Failed to create comment:', err);
-      showModal(err.message || 'Failed to post comment.', 'error');
+      showModal(err.message || 'Failed to post comment.', 'error', 'Error');
     }
   };
 
@@ -301,7 +301,7 @@ export default function ThreadDetail() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        showModal('Please log in to post a reply.', 'error');
+        showModal('Please log in to post a reply.', 'error', 'Login Required');
         return;
       }
 
@@ -374,7 +374,7 @@ export default function ThreadDetail() {
       }
     } catch (err: any) {
       console.error('Failed to post reply:', err);
-      showModal(err.message || 'Failed to post reply.', 'error');
+      showModal(err.message || 'Failed to post reply.', 'error', 'Error');
     }
   };
 
@@ -388,7 +388,7 @@ export default function ThreadDetail() {
       if (response.success) navigate('/threads');
     } catch (err) {
       console.error('Failed to delete thread:', err);
-      showModal('Failed to delete thread.', 'error');
+      showModal('Failed to delete thread.', 'error', 'Error');
     }
   };
 
@@ -554,7 +554,7 @@ export default function ThreadDetail() {
             onChange={(e) => {
               const selectedFiles = Array.from(e.target.files || []);
               if (selectedFiles.length + replyFiles.length > 5) {
-                showModal('Maximum 5 files allowed per reply.', 'error');
+                      showModal('Maximum 5 files allowed.', 'error', 'File Limit');
                 return;
               }
               setReplyFiles([...replyFiles, ...selectedFiles]);
@@ -661,14 +661,14 @@ export default function ThreadDetail() {
         }
       });
       if (response.ok) {
-        showModal('Thread approved successfully!', 'success');
+        showModal('Thread approved.', 'success', 'Success');
         loadThread(false);
       } else {
         throw new Error('Failed to approve thread');
       }
     } catch (error) {
       console.error('Error approving thread:', error);
-      showModal('Failed to approve thread. Please try again.', 'error');
+      showModal('Failed to approve thread.', 'error', 'Error');
     }
   };
 
@@ -684,14 +684,14 @@ export default function ThreadDetail() {
         }
       });
       if (response.ok) {
-        showModal('Thread rejected.', 'success');
+        showModal('Thread rejected.', 'success', 'Success');
         loadThread(false);
       } else {
         throw new Error('Failed to reject thread');
       }
     } catch (error) {
       console.error('Error rejecting thread:', error);
-      showModal('Failed to reject thread. Please try again.', 'error');
+      showModal('Failed to reject thread.', 'error', 'Error');
     }
   };
 
@@ -857,7 +857,7 @@ export default function ThreadDetail() {
                   onChange={(e) => {
                     const selectedFiles = Array.from(e.target.files || []);
                     if (selectedFiles.length + commentFiles.length > 5) {
-                      showModal('Maximum 5 files allowed per comment.', 'error');
+                      showModal('Maximum 5 files allowed.', 'error', 'File Limit');
                       return;
                     }
                     setCommentFiles([...commentFiles, ...selectedFiles]);

@@ -51,7 +51,7 @@ const Header: React.FC = () => {
     const handleLogout = () => {
         apiService.logout();
         setIsLoggedIn(false);
-        showModal('You have been logged out.', 'info');
+        showModal('You have been logged out.', 'info', 'Logged Out');
         navigate('/login');
     };
 

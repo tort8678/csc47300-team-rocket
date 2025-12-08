@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import mongoose from 'mongoose';
 import ThreadModel, { ThreadStatus } from '../database/threadModel.ts';
 import CommentModel from '../database/commentModel.ts';
 import UserModel from '../database/userModel.ts';
@@ -37,21 +38,40 @@ export class ThreadController {
       
       // Admin can see all statuses, regular users only see approved
       const isAdminUser = req.user ? isAdmin(req.user.role) : false;
-      if (!isAdmin) {
+      const userId = req.user?.userId;
+      
+      // Check if user is viewing their own threads
+      // Normalize both to strings for comparison (before ObjectId conversion)
+      const authorIdStr = authorId ? String(authorId).trim() : '';
+      const userIdStr = userId ? String(userId).trim() : '';
+      const isViewingOwnThreads = authorId && userId && authorIdStr === userIdStr;
+      
+      // Only filter by status if:
+      // 1. User is not an admin AND
+      // 2. User is not viewing their own threads
+      if (!isAdminUser && !isViewingOwnThreads) {
         query.status = ThreadStatus.APPROVED;
-      } else {
+      } else if (isAdminUser) {
         // Admin can filter by status if provided
         const status = req.query.status as string;
         if (status && Object.values(ThreadStatus).includes(status as ThreadStatus)) {
           query.status = status;
         }
+        // If no status filter provided, admin sees all statuses (no status filter added)
       }
+      // If isViewingOwnThreads is true and user is not admin, no status filter is added (shows all statuses)
       
       if (category && category !== 'all') {
         query.category = category;
       }
       if (authorId) {
-        query.author = authorId;
+        // Convert authorId string to ObjectId for MongoDB query
+        try {
+          query.author = new mongoose.Types.ObjectId(authorId);
+        } catch (error) {
+          // If authorId is not a valid ObjectId, skip the filter
+          console.error('Invalid authorId format:', authorId);
+        }
       }
 
       // Build sort
@@ -69,7 +89,6 @@ export class ThreadController {
         .limit(limit);
 
       // Get comment counts for each thread and check if user liked each thread
-      const userId = req.user?.userId;
       const threadsWithCounts = await Promise.all(
         threads.map(async (thread) => {
           const commentCount = await CommentModel.countDocuments({
@@ -147,9 +166,13 @@ export class ThreadController {
       // Check if user can view this thread
       // Regular users can only see approved threads, unless it's their own
       const isAdminUser = req.user ? isAdmin(req.user.role) : false;
-      const isAuthor = req.user && thread.author.toString() === req.user.userId;
+      // Check if user is the author - handle both populated and unpopulated author
+      const authorId = typeof thread.author === 'object' && thread.author._id 
+        ? thread.author._id.toString() 
+        : thread.author.toString();
+      const isAuthor = req.user && String(authorId).trim() === String(req.user.userId).trim();
       
-      if (!isAdmin && !isAuthor && thread.status !== ThreadStatus.APPROVED) {
+      if (!isAdminUser && !isAuthor && thread.status !== ThreadStatus.APPROVED) {
         return res.status(403).json({
           success: false,
           message: 'Thread is not available'

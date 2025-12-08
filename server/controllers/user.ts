@@ -250,11 +250,20 @@ export class UserController {
             }
 
             const isAdminUser = (req as AuthRequest).user ? isAdmin((req as AuthRequest).user!.role) : false;
+            const currentUserId = (req as AuthRequest).user?.userId;
+            
+            // Check if user is viewing their own profile
+            const isViewingOwnProfile = currentUserId && user._id.toString() === currentUserId.toString();
+            
             const query: any = { author: user._id, isActive: true };
             
-            if (!isAdminUser) {
+            // Only filter by status if:
+            // 1. User is not an admin AND
+            // 2. User is not viewing their own profile
+            if (!isAdminUser && !isViewingOwnProfile) {
                 query.status = ThreadStatus.APPROVED;
             }
+            // If isAdminUser is true OR isViewingOwnProfile is true, no status filter is added (shows all statuses)
 
             const threads = await ThreadModel.find(query)
                 .populate('author', 'username profilePictureUrl')

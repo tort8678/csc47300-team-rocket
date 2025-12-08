@@ -269,7 +269,7 @@ export default function Threads() {
                       setFilter('liked');
                       setCurrentPage(1);
                     } else {
-                      showModal('Please log in to view liked threads.', 'info');
+                      showModal('Please log in to view liked threads.', 'info', 'Login Required');
                     }
                   }}
                   disabled={!currentUser}
@@ -284,7 +284,7 @@ export default function Threads() {
                       setFilter('my-threads');
                       setCurrentPage(1);
                     } else {
-                      showModal('Please log in to view your threads.', 'info');
+                      showModal('Please log in to view your threads.', 'info', 'Login Required');
                     }
                   }}
                   disabled={!currentUser}

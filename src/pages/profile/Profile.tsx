@@ -66,7 +66,7 @@ export default function Profile() {
         if (isOwnProfile) {
             const token = localStorage.getItem('token');
             if (!token) {
-                showModal('Please log in to view your profile.', 'info');
+                showModal('Please log in to view your profile.', 'info', 'Login Required');
                 navigate('/login');
                 return;
             }
@@ -127,7 +127,7 @@ export default function Profile() {
                     }, 100);
                 }
             } else {
-                showModal('Failed to load profile. Please try again.', 'error');
+                showModal('Failed to load profile.', 'error', 'Error');
                 if (isOwnProfile) {
                     navigate('/login');
                 } else {
@@ -142,15 +142,15 @@ export default function Profile() {
                 // Check if current user is admin - if so, they might be trying to view a banned user
                 // but the backend should allow it, so this might be a different error
                 if (isAdmin) {
-                    showModal('User not found.', 'error');
+                    showModal('User not found.', 'error', 'Error');
                     navigate('/threads');
                 } else {
                     // Admin should be able to view banned users, so this might be a different issue
-                    showModal('Failed to load profile. The user may not exist.', 'error');
+                    showModal('User may not exist.', 'error', 'Error');
                     navigate('/threads');
                 }
             } else {
-                showModal('Failed to load profile. Please try again.', 'error');
+                showModal('Failed to load profile.', 'error', 'Error');
                 if (isOwnProfile) {
                     navigate('/login');
                 } else {
@@ -310,13 +310,13 @@ export default function Profile() {
                 const updatedUser = response.data as UserProfile;
                 setUser(updatedUser);
                 setIsEditing(false);
-                showModal('Profile updated successfully!', 'success');
+                showModal('Profile updated.', 'success', 'Success');
             } else {
-                showModal('Failed to update profile. Please try again.', 'error');
+                showModal('Failed to update profile.', 'error', 'Error');
             }
         } catch (error) {
             console.error('Error updating profile:', error);
-            showModal('Failed to update profile. Please try again.', 'error');
+            showModal('Failed to update profile.', 'error', 'Error');
         }
     };
 
@@ -348,7 +348,7 @@ export default function Profile() {
         } else {
             const hours = parseInt(banDuration);
             if (isNaN(hours) || hours <= 0) {
-                showModal('Invalid duration. Please select a valid option.', 'error');
+                showModal('Invalid duration selected.', 'error', 'Error');
                 return;
             }
             duration = hours;
@@ -356,8 +356,9 @@ export default function Profile() {
 
         const confirmed = await showConfirm(
             duration === 'forever' 
-                ? `Are you sure you want to permanently ban ${user.username}?`
-                : `Are you sure you want to ban ${user.username} for ${duration} hour${duration > 1 ? 's' : ''}?`
+                ? `Permanently ban ${user.username}?`
+                : `Ban ${user.username} for ${duration} hour${duration > 1 ? 's' : ''}?`,
+            'Confirm Ban'
         );
         if (!confirmed) {
             setShowBanModal(false);
@@ -368,14 +369,14 @@ export default function Profile() {
         try {
             const response = await apiService.banUser(user.id, duration);
             if (response.success) {
-                showModal(response.message || 'User banned successfully.', 'success');
+                showModal(response.message || 'User banned.', 'success', 'Success');
                 await loadUserProfile();
             } else {
-                showModal(response.message || 'Failed to ban user.', 'error');
+                showModal(response.message || 'Failed to ban user.', 'error', 'Error');
             }
         } catch (error: any) {
             console.error('Error banning user:', error);
-            showModal(error.response?.data?.message || 'Failed to ban user. Please try again.', 'error');
+            showModal(error.response?.data?.message || 'Failed to ban user.', 'error', 'Error');
         } finally {
             setShowBanModal(false);
             setBanDuration('forever');
@@ -384,39 +385,39 @@ export default function Profile() {
 
     const handleUnbanUser = async () => {
         if (!user) return;
-        const confirmed = await showConfirm(`Are you sure you want to unban ${user.username}?`);
+        const confirmed = await showConfirm(`Unban ${user.username}?`, 'Confirm Unban');
         if (!confirmed) return;
 
         try {
             const response = await apiService.unbanUser(user.id);
             if (response.success) {
-                showModal('User unbanned successfully.', 'success');
+                showModal('User unbanned.', 'success', 'Success');
                 await loadUserProfile();
             } else {
-                showModal(response.message || 'Failed to unban user.', 'error');
+                showModal(response.message || 'Failed to unban user.', 'error', 'Error');
             }
         } catch (error: any) {
             console.error('Error unbanning user:', error);
-            showModal(error.response?.data?.message || 'Failed to unban user. Please try again.', 'error');
+            showModal(error.response?.data?.message || 'Failed to unban user.', 'error', 'Error');
         }
     };
 
     const handleDeleteUser = async () => {
         if (!user) return;
-        const confirmed = await showConfirm(`Are you sure you want to delete ${user.username}? This action cannot be undone.`);
+        const confirmed = await showConfirm(`Delete ${user.username}? This cannot be undone.`, 'Confirm Delete');
         if (!confirmed) return;
 
         try {
             const response = await apiService.deleteAdminUser(user.id);
             if (response.success) {
-                showModal('User deleted successfully.', 'success');
+                showModal('User deleted.', 'success', 'Success');
                 navigate('/');
             } else {
-                showModal(response.message || 'Failed to delete user.', 'error');
+                showModal(response.message || 'Failed to delete user.', 'error', 'Error');
             }
         } catch (error: any) {
             console.error('Error deleting user:', error);
-            showModal(error.response?.data?.message || 'Failed to delete user. Please try again.', 'error');
+            showModal(error.response?.data?.message || 'Failed to delete user.', 'error', 'Error');
         }
     };
 

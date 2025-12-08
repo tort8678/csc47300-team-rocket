@@ -30,9 +30,13 @@ export class CommentController {
         });
       }
       
-      // Only show comments for approved threads (unless admin)
+      // Only show comments for approved threads (unless admin or author)
       const isAdminUser = req.user ? isAdmin(req.user.role) : false;
-      if (!isAdminUser && thread.status !== ThreadStatus.APPROVED) {
+      // Check if user is the author - thread.author is an ObjectId, not populated
+      const authorId = thread.author.toString();
+      const isAuthor = req.user && String(authorId).trim() === String(req.user.userId).trim();
+      
+      if (!isAdminUser && !isAuthor && thread.status !== ThreadStatus.APPROVED) {
         return res.status(404).json({
           success: false,
           message: 'Thread not found'

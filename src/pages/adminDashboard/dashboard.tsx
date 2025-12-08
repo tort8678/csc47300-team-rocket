@@ -524,7 +524,7 @@ export default function App() {
       }
     } catch (error) {
       console.error('Error fetching users:', error);
-      showModal('Failed to fetch users. Please try again.', 'error');
+      showModal('Failed to fetch users.', 'error', 'Error');
     } finally {
       setUsersLoading(false);
     }
@@ -574,7 +574,7 @@ export default function App() {
       await fetchStats();
     } catch (error) {
       console.error("Error approving thread:", error);
-      showModal("Failed to approve thread. Please try again.", 'error');
+      showModal("Failed to approve thread.", 'error', 'Error');
     }
   };
 
@@ -601,7 +601,7 @@ export default function App() {
       await fetchStats();
     } catch (error) {
       console.error("Error rejecting thread:", error);
-      showModal("Failed to reject thread. Please try again.", 'error');
+      showModal("Failed to reject thread.", 'error', 'Error');
     }
   };
 
@@ -621,7 +621,7 @@ export default function App() {
     } else {
       const hours = parseInt(banDuration);
       if (isNaN(hours) || hours <= 0) {
-        showModal('Invalid duration. Please select a valid option.', 'error');
+        showModal('Invalid duration selected.', 'error', 'Error');
         return;
       }
       duration = hours;
@@ -629,8 +629,9 @@ export default function App() {
 
     const confirmed = await showConfirm(
       duration === 'forever' 
-        ? 'Are you sure you want to permanently ban this user?'
-        : `Are you sure you want to ban this user for ${duration} hour${duration > 1 ? 's' : ''}?`
+        ? `Permanently ban this user?`
+        : `Ban this user for ${duration} hour${duration > 1 ? 's' : ''}?`,
+      'Confirm Ban'
     );
     if (!confirmed) {
       setShowBanModal(false);
@@ -641,14 +642,14 @@ export default function App() {
     try {
       const response = await apiService.banUser(banUserId, duration);
       if (response.success) {
-        showModal(response.message || 'User banned successfully.', 'success');
+        showModal(response.message || 'User banned.', 'success', 'Success');
         await fetchUsers(usersPagination.page);
       } else {
-        showModal(response.message || 'Failed to ban user.', 'error');
+        showModal(response.message || 'Failed to ban user.', 'error', 'Error');
       }
     } catch (error: any) {
       console.error('Error banning user:', error);
-      showModal(error.response?.data?.message || 'Failed to ban user. Please try again.', 'error');
+      showModal(error.response?.data?.message || 'Failed to ban user.', 'error', 'Error');
     } finally {
       setShowBanModal(false);
       setBanUserId(null);
@@ -657,38 +658,38 @@ export default function App() {
   };
 
   const handleUnbanUser = async (userId: string) => {
-    const confirmed = await showConfirm('Are you sure you want to unban this user?');
+    const confirmed = await showConfirm('Unban this user?', 'Confirm Unban');
     if (!confirmed) return;
 
     try {
       const response = await apiService.unbanUser(userId);
       if (response.success) {
-        showModal('User unbanned successfully.', 'success');
+        showModal('User unbanned.', 'success', 'Success');
         await fetchUsers(usersPagination.page);
       } else {
-        showModal(response.message || 'Failed to unban user.', 'error');
+        showModal(response.message || 'Failed to unban user.', 'error', 'Error');
       }
     } catch (error: any) {
       console.error('Error unbanning user:', error);
-      showModal(error.response?.data?.message || 'Failed to unban user. Please try again.', 'error');
+      showModal(error.response?.data?.message || 'Failed to unban user.', 'error', 'Error');
     }
   };
 
   const handleDeleteUser = async (userId: string) => {
-    const confirmed = await showConfirm('Are you sure you want to delete this user? This action cannot be undone.');
+    const confirmed = await showConfirm('Delete this user? This cannot be undone.', 'Confirm Delete');
     if (!confirmed) return;
 
     try {
       const response = await apiService.deleteAdminUser(userId);
       if (response.success) {
-        showModal('User deleted successfully.', 'success');
+        showModal('User deleted.', 'success', 'Success');
         await fetchUsers(usersPagination.page);
       } else {
-        showModal(response.message || 'Failed to delete user.', 'error');
+        showModal(response.message || 'Failed to delete user.', 'error', 'Error');
       }
     } catch (error: any) {
       console.error('Error deleting user:', error);
-      showModal(error.response?.data?.message || 'Failed to delete user. Please try again.', 'error');
+      showModal(error.response?.data?.message || 'Failed to delete user.', 'error', 'Error');
     }
   };
 
@@ -697,16 +698,16 @@ export default function App() {
     try {
       const response = await apiService.createAdmin(createAdminData);
       if (response.success) {
-        showModal('Admin user created successfully.', 'success');
+        showModal('Admin user created.', 'success', 'Success');
         setShowCreateAdminForm(false);
         setCreateAdminData({ username: '', email: '', password: '', role: 'admin_level_1' });
         await fetchUsers(usersPagination.page);
       } else {
-        showModal(response.message || 'Failed to create admin user.', 'error');
+        showModal(response.message || 'Failed to create admin user.', 'error', 'Error');
       }
     } catch (error: any) {
       console.error('Error creating admin:', error);
-      showModal(error.response?.data?.message || 'Failed to create admin user. Please try again.', 'error');
+      showModal(error.response?.data?.message || 'Failed to create admin user.', 'error', 'Error');
     }
   };
 
