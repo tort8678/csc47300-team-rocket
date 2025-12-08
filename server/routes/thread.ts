@@ -1,8 +1,7 @@
 import { Router } from 'express';
 import { ThreadController } from '../controllers/thread.ts';
-import { authenticate, optionalAuthenticate, authorize } from '../middleware/auth.ts';
+import { authenticate, optionalAuthenticate, requireAdmin } from '../middleware/auth.ts';
 import { upload } from '../middleware/upload.ts';
-import { UserRole } from '../types/index.ts';
 import { getFileFromGridFS, getFileInfoFromGridFS } from '../services/gridfs.ts';
 
 const router = Router();
@@ -22,9 +21,9 @@ router.delete('/:threadId', authenticate, ThreadController.deleteThread);
 router.post('/:threadId/like', authenticate, ThreadController.toggleLikeThread);
 
 // Admin routes
-router.get('/admin/pending', authenticate, authorize(UserRole.ADMIN), ThreadController.getPendingThreads);
-router.get('/admin/stats', authenticate, authorize(UserRole.ADMIN), ThreadController.getThreadStats);
-router.post('/admin/:threadId/approve', authenticate, authorize(UserRole.ADMIN), ThreadController.approveThread);
-router.post('/admin/:threadId/reject', authenticate, authorize(UserRole.ADMIN), ThreadController.rejectThread);
+router.get('/admin/pending', authenticate, requireAdmin, ThreadController.getPendingThreads);
+router.get('/admin/stats', authenticate, requireAdmin, ThreadController.getThreadStats);
+router.post('/admin/:threadId/approve', authenticate, requireAdmin, ThreadController.approveThread);
+router.post('/admin/:threadId/reject', authenticate, requireAdmin, ThreadController.rejectThread);
 
 export default router;

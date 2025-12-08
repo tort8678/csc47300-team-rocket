@@ -12,13 +12,17 @@ import {
     X,
     SquarePen,
     Heart,
-    ArrowDown
+    ArrowDown,
+    Ban,
+    UserCheck,
+    Trash2
 } from 'lucide-react';
 import Header from "../../components/header";
 import Footer from "../../components/footer";
 import ThreadItem from "../../components/threadItem";
 import apiService from "../../services/api";
 import { useModal } from "../../contexts/ModalContext";
+import CustomSelect from "../../components/CustomSelect";
 import '../../styles/main.css';
 import '../../styles/profile.css';
 import type {Thread} from '../../types/api.types';
@@ -32,11 +36,14 @@ interface UserProfile extends ApiUser {
 }
 
 export default function Profile() {
-    const { showModal } = useModal();
+    const { showModal, showConfirm } = useModal();
     const navigate = useNavigate();
     const { username } = useParams<{ username?: string }>();
     const isOwnProfile = !username || (localStorage.getItem('user') && username === JSON.parse(localStorage.getItem('user') || '{}').username);
     const [user, setUser] = useState<UserProfile | null>(null);
+    const [, setCurrentUser] = useState<UserProfile | null>(null);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isAdminLevel2, setIsAdminLevel2] = useState(false);
     const [userThreads, setUserThreads] = useState<Thread[]>([]);
     const [userComments, setUserComments] = useState<any[]>([]);
     const [displayedThreads, setDisplayedThreads] = useState<Thread[]>([]);
@@ -50,6 +57,8 @@ export default function Profile() {
         classYear: '',
         location: ''
     });
+    const [showBanModal, setShowBanModal] = useState(false);
+    const [banDuration, setBanDuration] = useState<string>('forever');
 
     useEffect(() => {
         document.title = username ? `${username}'s Profile - DamIt` : 'Profile - DamIt';
@@ -63,6 +72,25 @@ export default function Profile() {
             }
         }
 
+        // Load current user info to check admin status
+        const loadCurrentUser = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    const response = await apiService.getCurrentUser();
+                    if (response.success && response.data) {
+                        const currentUserData = response.data as UserProfile;
+                        setCurrentUser(currentUserData);
+                        setIsAdmin(currentUserData.role === 'admin_level_1' || currentUserData.role === 'admin_level_2');
+                        setIsAdminLevel2(currentUserData.role === 'admin_level_2');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading current user:', error);
+            }
+        };
+
+        loadCurrentUser();
         loadUserProfile();
     }, [navigate, username, isOwnProfile]);
 
@@ -106,13 +134,28 @@ export default function Profile() {
                     navigate('/threads');
                 }
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error loading profile:', error);
-            showModal('Failed to load profile. Please try again.', 'error');
-            if (isOwnProfile) {
-                navigate('/login');
+            // If it's a 404 and user is not an admin, navigate away
+            // But if user is an admin, they should be able to view banned users
+            if (error.response?.status === 404) {
+                // Check if current user is admin - if so, they might be trying to view a banned user
+                // but the backend should allow it, so this might be a different error
+                if (isAdmin) {
+                    showModal('User not found.', 'error');
+                    navigate('/threads');
+                } else {
+                    // Admin should be able to view banned users, so this might be a different issue
+                    showModal('Failed to load profile. The user may not exist.', 'error');
+                    navigate('/threads');
+                }
             } else {
-                navigate('/threads');
+                showModal('Failed to load profile. Please try again.', 'error');
+                if (isOwnProfile) {
+                    navigate('/login');
+                } else {
+                    navigate('/threads');
+                }
             }
         } finally {
             setLoading(false);
@@ -302,6 +345,94 @@ export default function Profile() {
         setIsEditing(false);
     };
 
+    const handleBanUser = () => {
+        if (!user) return;
+        setBanDuration('forever');
+        setShowBanModal(true);
+    };
+
+    const handleConfirmBan = async () => {
+        if (!user) return;
+
+        let duration: number | 'forever' | null = null;
+        
+        if (banDuration === 'forever') {
+            duration = 'forever';
+        } else {
+            const hours = parseInt(banDuration);
+            if (isNaN(hours) || hours <= 0) {
+                showModal('Invalid duration. Please select a valid option.', 'error');
+                return;
+            }
+            duration = hours;
+        }
+
+        const confirmed = await showConfirm(
+            duration === 'forever' 
+                ? `Are you sure you want to permanently ban ${user.username}?`
+                : `Are you sure you want to ban ${user.username} for ${duration} hour${duration > 1 ? 's' : ''}?`
+        );
+        if (!confirmed) {
+            setShowBanModal(false);
+            setBanDuration('forever');
+            return;
+        }
+
+        try {
+            const response = await apiService.banUser(user.id, duration);
+            if (response.success) {
+                showModal(response.message || 'User banned successfully.', 'success');
+                await loadUserProfile();
+            } else {
+                showModal(response.message || 'Failed to ban user.', 'error');
+            }
+        } catch (error: any) {
+            console.error('Error banning user:', error);
+            showModal(error.response?.data?.message || 'Failed to ban user. Please try again.', 'error');
+        } finally {
+            setShowBanModal(false);
+            setBanDuration('forever');
+        }
+    };
+
+    const handleUnbanUser = async () => {
+        if (!user) return;
+        const confirmed = await showConfirm(`Are you sure you want to unban ${user.username}?`);
+        if (!confirmed) return;
+
+        try {
+            const response = await apiService.unbanUser(user.id);
+            if (response.success) {
+                showModal('User unbanned successfully.', 'success');
+                await loadUserProfile();
+            } else {
+                showModal(response.message || 'Failed to unban user.', 'error');
+            }
+        } catch (error: any) {
+            console.error('Error unbanning user:', error);
+            showModal(error.response?.data?.message || 'Failed to unban user. Please try again.', 'error');
+        }
+    };
+
+    const handleDeleteUser = async () => {
+        if (!user) return;
+        const confirmed = await showConfirm(`Are you sure you want to delete ${user.username}? This action cannot be undone.`);
+        if (!confirmed) return;
+
+        try {
+            const response = await apiService.deleteAdminUser(user.id);
+            if (response.success) {
+                showModal('User deleted successfully.', 'success');
+                navigate('/');
+            } else {
+                showModal(response.message || 'Failed to delete user.', 'error');
+            }
+        } catch (error: any) {
+            console.error('Error deleting user:', error);
+            showModal(error.response?.data?.message || 'Failed to delete user. Please try again.', 'error');
+        }
+    };
+
     if (loading || !user) {
         return (
             <div>
@@ -361,10 +492,69 @@ export default function Profile() {
                         <div className="profile-banner"></div>
                         <div className="profile-info">
                             <div className="profile-avatar-large" id="profile-avatar">{initials}</div>
-                            <div className="profile-details">
-                                <h1 id="profile-username">{user.username}</h1>
-                                <p className="user-title">{user.major || 'Student'}</p>
-                                <p className="join-date">Member since {joinDate}</p>
+                            <div className="profile-details" style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                                    <div>
+                                        <h1 id="profile-username">{user.username}</h1>
+                                        <p className="user-title">{user.major || 'Student'}</p>
+                                        <p className="join-date">Member since {joinDate}</p>
+                                    </div>
+                                    {user.isActive === false && (
+                                        <span style={{ 
+                                            padding: '0.5rem 1rem', 
+                                            borderRadius: '4px',
+                                            background: '#FF6962',
+                                            color: 'white',
+                                            fontSize: '0.875rem',
+                                            fontWeight: 'bold'
+                                        }}>
+                                            Banned
+                                        </span>
+                                    )}
+                                </div>
+                                {isAdmin && !isOwnProfile && user && (
+                                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                                        {user.isActive !== false ? (
+                                            // Admin Level 1 can only ban regular users, Admin Level 2 can ban Admin Level 1 and regular users (but not Admin Level 2)
+                                            ((isAdminLevel2 && (user.role === 'user' || user.role === 'admin_level_1')) || 
+                                             (!isAdminLevel2 && user.role === 'user')) && (
+                                                <button
+                                                    onClick={handleBanUser}
+                                                    className="btn btn-secondary"
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                                >
+                                                    <Ban size={18} />
+                                                </button>
+                                            )
+                                        ) : (
+                                            // Same permission check for unban
+                                            ((isAdminLevel2 && (user.role === 'user' || user.role === 'admin_level_1')) || 
+                                             (!isAdminLevel2 && user.role === 'user')) && (
+                                                <button
+                                                    onClick={handleUnbanUser}
+                                                    className="btn btn-primary"
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                                >
+                                                    <UserCheck size={18} />
+                                                </button>
+                                            )
+                                        )}
+                                        {isAdminLevel2 && (user.role === 'user' || user.role === 'admin_level_1') && (
+                                            <button
+                                                onClick={handleDeleteUser}
+                                                className="btn btn-secondary"
+                                                style={{ 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    gap: '0.5rem',
+                                                    background: '#FF6962'
+                                                }}
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -528,7 +718,7 @@ export default function Profile() {
                                     <>
                                         {displayedThreads.length === 0 ? (
                                             <div className="empty-message" style={{textAlign: 'center', padding: '2rem', color: '#ffffffb3'}}>
-                                                No threads yet. <Link to="/thread/new" style={{color: '#fdcffa', textDecoration: 'none'}}>Create your first thread!</Link>
+                                                No threads yet. <Link to="/thread/new" style={{color: '#fdcffa', textDecoration: 'none'}}>{isOwnProfile && 'Create your first thread!'}</Link>
                                             </div>
                                         ) : (
                                             <div className="threads-list">
@@ -601,6 +791,68 @@ export default function Profile() {
                     </div>
                 </div>
             </main>
+
+            {/* Ban User Modal */}
+            {showBanModal && (
+                <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => {
+                    setShowBanModal(false);
+                    setBanDuration('forever');
+                }}>
+                    <div 
+                        style={{ 
+                            background: 'rgba(0,0,0,0.4)', 
+                            padding: '1.5rem', 
+                            borderRadius: '15px', 
+                            border: '1px solid #333',
+                            backdropFilter: 'blur(15px)',
+                            width: '500px',
+                            maxWidth: '90vw'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h3 style={{ marginBottom: '1rem', color: '#FDCFFA' }}>Ban User</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#fff' }}>Set Ban Duration</label>
+                                <CustomSelect
+                                    value={banDuration}
+                                    onChange={(value) => setBanDuration(value)}
+                                    options={[
+                                        { value: '1', label: '1 hour' },
+                                        { value: '24', label: '1 day' },
+                                        { value: '168', label: '1 week' },
+                                        { value: '720', label: '1 month' },
+                                        { value: 'forever', label: 'Forever' }
+                                    ]}
+                                    placeholder="Select ban duration"
+                                />
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowBanModal(false);
+                                    setBanDuration('forever');
+                                }}
+                                className="modal-close"
+                                style={{ width: '40px' }}
+                            >
+                                <X size={18} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleConfirmBan}
+                                className="btn btn-primary"
+                                style={{ width: '40px' }}
+                            >
+                                <Check size={18} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <Footer/>
         </div>
     );

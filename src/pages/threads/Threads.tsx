@@ -248,7 +248,7 @@ export default function Threads() {
               <h1>Recent Threads</h1>
               <p>Latest discussions from the community</p>
             </div>
-            <Link to="/thread/new" className="new-thread-btn"><Plus /></Link>
+            <Link to="/thread/new" className="new-thread-btn"><Plus /> Create Thread</Link>
           </div>
 
           <div className="filter-bar">

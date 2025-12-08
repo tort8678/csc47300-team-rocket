@@ -22,22 +22,22 @@
 }
 
 .new-thread-btn {
-    color: var(--white);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    color: white;
     cursor: pointer;
-    background: #fff3;
-    border: 2px solid #fff;
-    border-radius: 10px;
-    height: 50px;
-    width: 50px;
     display: flex;
-    justify-content: center;
     align-items: center;
-    box-sizing: border-box;
+    gap: 0.5rem;
+    transition: background 0.3s;
+    text-decoration: none;
+    height: 50px;
 }
 
 .new-thread-btn:hover {
-    transform: translateY(-3px);
-    opacity: 0.9;
+    background: rgba(255, 255, 255, 0.2);
 }
 
 /* Filter Bar */

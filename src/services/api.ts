@@ -295,6 +295,16 @@ class ApiService {
     return response.data;
   }
 
+  async banUser(userId: string, duration?: number | 'forever' | null): Promise<ApiResponse<User>> {
+    const response = await this.api.post<ApiResponse<User>>(`/admin/users/${userId}/ban`, { duration });
+    return response.data;
+  }
+
+  async unbanUser(userId: string): Promise<ApiResponse<User>> {
+    const response = await this.api.post<ApiResponse<User>>(`/admin/users/${userId}/unban`);
+    return response.data;
+  }
+
   async getAdminThreads(params?: {
     page?: number;
     limit?: number;

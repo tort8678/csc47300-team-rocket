@@ -15,7 +15,8 @@ export class UserService {
         return await UserModel.findByIdAndUpdate(userId, updateData, { new: true }).exec();
     }
     static async deleteUser(userId: string) {
-        return await UserModel.findByIdAndDelete(userId).exec();
+        // Soft delete instead of hard delete
+        return await UserModel.findByIdAndUpdate(userId, { isActive: false }, { new: true }).exec();
     }
 
     static async getAllUsers() {

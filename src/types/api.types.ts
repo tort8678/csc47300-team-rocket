@@ -33,6 +33,7 @@ export interface Comment {
   parentComment?: string | null;
   likes: number;
   userLiked: boolean;
+  attachments?: string[];
   replies: Comment[];
   createdAt: string | Date;
   updatedAt?: string | Date;
@@ -49,6 +50,8 @@ export interface User {
   location?: string;
   EMPLID?: number;
   role?: string;
+  isActive?: boolean;
+  bannedUntil?: string | Date | null;
   createdAt?: string | Date;
 }
 

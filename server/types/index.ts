@@ -2,7 +2,8 @@ import { Request } from 'express';
 
 export enum UserRole {
   USER = 'user',
-  ADMIN = 'admin'
+  ADMIN_LEVEL_1 = 'admin_level_1',
+  ADMIN_LEVEL_2 = 'admin_level_2'
 }
 
 export interface JWTPayload {

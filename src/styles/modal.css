@@ -109,10 +109,18 @@ ease-out slideUp;
 }
 
 .modal-actions .btn {
-  width: 120px;
   box-sizing: border-box;
+  height: 40px;
+  width: 100px;
 }
 
 .modal-message.header-message {
-  font-size: 1.1rem;
+  font-size: 1.3rem;
+  text-align: center;
+  margin: 0;
+  padding: 10px;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

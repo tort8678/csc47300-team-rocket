@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { Check, X, RefreshCw } from "lucide-react";
+import { Check, X, RefreshCw, Users, FileText, UserPlus, Ban, UserCheck, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import type { Thread, ApiResponse } from "../../types/api.types";
+import type { Thread, ApiResponse, User } from "../../types/api.types";
 import { useModal } from "../../contexts/ModalContext";
 import CustomSelect, { type SelectOptionGroup } from "../../components/CustomSelect";
+import apiService from "../../services/api";
 import '../../styles/adminDashboard.css';
 import Header from "../../components/header";
+import Footer from "../../components/footer";
 const API_BASE_URL = "http://localhost:3000/api";
 
 interface ThreadWithAuthor extends Thread {
@@ -158,6 +160,7 @@ const PostCard = ({
   };
 
   return (
+    
     <div className="post-card">
       <div>
         <div className="post-header">
@@ -221,8 +224,10 @@ const PostCard = ({
 };
 
 export default function App() {
-  const { showModal } = useModal();
+  const { showModal, showConfirm } = useModal();
+  const [activeTab, setActiveTab] = useState<'threads' | 'users'>('threads');
   const [posts, setPosts] = useState<ThreadWithAuthor[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -230,12 +235,27 @@ export default function App() {
     rejected: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
     category: "all",
   });
+  const [userFilters, setUserFilters] = useState({
+    search: "",
+  });
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminLevel2, setIsAdminLevel2] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [showCreateAdminForm, setShowCreateAdminForm] = useState(false);
+  const [createAdminData, setCreateAdminData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    role: 'admin_level_1' as 'admin_level_1' | 'admin_level_2'
+  });
+  const [showBanModal, setShowBanModal] = useState(false);
+  const [banUserId, setBanUserId] = useState<string | null>(null);
+  const [banDuration, setBanDuration] = useState<string>('forever');
 
   // Check if user is admin
   useEffect(() => {
@@ -251,8 +271,9 @@ export default function App() {
         if (userStr) {
           try {
             const user = JSON.parse(userStr);
-            if (user.role === 'admin') {
+            if (user.role === 'admin_level_1' || user.role === 'admin_level_2') {
               setIsAdmin(true);
+              setIsAdminLevel2(user.role === 'admin_level_2');
               setCheckingAuth(false);
               return;
             }
@@ -271,8 +292,9 @@ export default function App() {
 
         if (response.ok) {
           const data = await response.json();
-          if (data.success && data.data && data.data.role === 'admin') {
+          if (data.success && data.data && (data.data.role === 'admin_level_1' || data.data.role === 'admin_level_2')) {
             setIsAdmin(true);
+            setIsAdminLevel2(data.data.role === 'admin_level_2');
             setCheckingAuth(false);
             return;
           }
@@ -296,6 +318,38 @@ export default function App() {
 
   const getAuthToken = () => {
     return localStorage.getItem("token");
+  };
+
+  const formatBanExpiry = (timestamp: string | Date | null | undefined) => {
+    if (!timestamp) return 'Permanent';
+    const expiry = new Date(timestamp);
+    const now = new Date();
+    if (expiry <= now) return 'Expired';
+  
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    };
+  
+    return expiry.toLocaleString('en-US', options);
+  };
+
+  const getCurrentUserRole = (): string => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        return user.role || 'user';
+      } catch (e) {
+        return 'user';
+      }
+    }
+    return 'user';
   };
 
   const fetchPendingThreads = async () => {
@@ -361,21 +415,33 @@ export default function App() {
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      setUsersLoading(true);
+      // Include inactive (banned) users for admins
+      const response = await apiService.getAdminUsers({ page: 1, limit: 100, includeInactive: true });
+      if (response.success && response.data) {
+        setUsers(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      showModal('Failed to fetch users. Please try again.', 'error');
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
   useEffect(() => {
     // Only fetch if admin check is complete and user is admin
     if (!checkingAuth && isAdmin) {
-      fetchPendingThreads();
-      fetchStats();
-      
-      // Refresh every 30 seconds to catch new threads
-      const interval = setInterval(() => {
+      if (activeTab === 'threads') {
         fetchPendingThreads();
         fetchStats();
-      }, 30000);
-      
-      return () => clearInterval(interval);
+      } else if (activeTab === 'users') {
+        fetchUsers();
+      }
     }
-  }, [checkingAuth, isAdmin]);
+  }, [checkingAuth, isAdmin, activeTab]);
 
   const handleApprove = async (postId: string) => {
     try {
@@ -431,6 +497,111 @@ export default function App() {
     }
   };
 
+  const handleBanUser = (userId: string) => {
+    setBanUserId(userId);
+    setBanDuration('forever');
+    setShowBanModal(true);
+  };
+
+  const handleConfirmBan = async () => {
+    if (!banUserId) return;
+
+    let duration: number | 'forever' | null = null;
+    
+    if (banDuration === 'forever') {
+      duration = 'forever';
+    } else {
+      const hours = parseInt(banDuration);
+      if (isNaN(hours) || hours <= 0) {
+        showModal('Invalid duration. Please select a valid option.', 'error');
+        return;
+      }
+      duration = hours;
+    }
+
+    const confirmed = await showConfirm(
+      duration === 'forever' 
+        ? 'Are you sure you want to permanently ban this user?'
+        : `Are you sure you want to ban this user for ${duration} hour${duration > 1 ? 's' : ''}?`
+    );
+    if (!confirmed) {
+      setShowBanModal(false);
+      setBanUserId(null);
+      return;
+    }
+
+    try {
+      const response = await apiService.banUser(banUserId, duration);
+      if (response.success) {
+        showModal(response.message || 'User banned successfully.', 'success');
+        await fetchUsers();
+      } else {
+        showModal(response.message || 'Failed to ban user.', 'error');
+      }
+    } catch (error: any) {
+      console.error('Error banning user:', error);
+      showModal(error.response?.data?.message || 'Failed to ban user. Please try again.', 'error');
+    } finally {
+      setShowBanModal(false);
+      setBanUserId(null);
+      setBanDuration('forever');
+    }
+  };
+
+  const handleUnbanUser = async (userId: string) => {
+    const confirmed = await showConfirm('Are you sure you want to unban this user?');
+    if (!confirmed) return;
+
+    try {
+      const response = await apiService.unbanUser(userId);
+      if (response.success) {
+        showModal('User unbanned successfully.', 'success');
+        await fetchUsers();
+      } else {
+        showModal(response.message || 'Failed to unban user.', 'error');
+      }
+    } catch (error: any) {
+      console.error('Error unbanning user:', error);
+      showModal(error.response?.data?.message || 'Failed to unban user. Please try again.', 'error');
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    const confirmed = await showConfirm('Are you sure you want to delete this user? This action cannot be undone.');
+    if (!confirmed) return;
+
+    try {
+      const response = await apiService.deleteAdminUser(userId);
+      if (response.success) {
+        showModal('User deleted successfully.', 'success');
+        await fetchUsers();
+      } else {
+        showModal(response.message || 'Failed to delete user.', 'error');
+      }
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      showModal(error.response?.data?.message || 'Failed to delete user. Please try again.', 'error');
+    }
+  };
+
+  const handleCreateAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await apiService.createAdmin(createAdminData);
+      if (response.success) {
+        showModal('Admin user created successfully.', 'success');
+        setShowCreateAdminForm(false);
+        setCreateAdminData({ username: '', email: '', password: '', role: 'admin_level_1' });
+        await fetchUsers();
+      } else {
+        showModal(response.message || 'Failed to create admin user.', 'error');
+      }
+    } catch (error: any) {
+      console.error('Error creating admin:', error);
+      showModal(error.response?.data?.message || 'Failed to create admin user. Please try again.', 'error');
+    }
+  };
+
   const filteredPosts = posts.filter((post) => {
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
@@ -444,6 +615,19 @@ export default function App() {
     }
     if (filters.category !== "all" && post.category !== filters.category) {
       return false;
+    }
+    return true;
+  });
+
+  const filteredUsers = users.filter((user) => {
+    if (userFilters.search) {
+      const searchLower = userFilters.search.toLowerCase();
+      if (
+        !user.username.toLowerCase().includes(searchLower) &&
+        !user.email.toLowerCase().includes(searchLower)
+      ) {
+        return false;
+      }
     }
     return true;
   });
@@ -474,68 +658,420 @@ export default function App() {
       <Header />
 
       <div className="admin-container">
-        {/* Statistics Cards */}
-        <div className="admin-stats-grid">
-          <StatCard label="Total Posts" value={stats.total} color="#FDCFFA" />
-          <StatCard
-            label="Pending Review"
-            value={stats.pending}
-            color="#FDCFFA"
-          />
-          <StatCard
-            label="Approved Today"
-            value={stats.approved}
-            color="#BDE7BD"
-          />
-          <StatCard
-            label="Rejected Today"
-            value={stats.rejected}
-            color="#FF6962"
-          />
+        {/* Tabs */}
+        <div 
+          className="admin-tabs"
+        >
+          <button
+            onClick={() => setActiveTab('threads')}
+            className={`tab-btn ${activeTab === 'threads' ? 'active' : ''}`}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: 'transparent',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontWeight: 'bold'
+            }}
+          >
+            <FileText size={18} />
+            Threads
+          </button>
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
+            style={{
+              padding: '0.75rem 1.5rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontWeight: 'bold'
+            }}
+          >
+            <Users size={18} />
+            Users
+          </button>
         </div>
 
-        {/* Filter Bar */}
-        <FilterBar filters={filters} onFiltersChange={setFilters} />
-        {/* Pending Review Queue */}
-        <div>
-            <div className="section-header">
+        {activeTab === 'threads' && (
+          <>
+            {/* Statistics Cards */}
+            <div className="admin-stats-grid">
+              <StatCard label="Total Posts" value={stats.total} color="#FDCFFA" />
+              <StatCard
+                label="Pending Review"
+                value={stats.pending}
+                color="#FDCFFA"
+              />
+              <StatCard
+                label="Approved Today"
+                value={stats.approved}
+                color="#BDE7BD"
+              />
+              <StatCard
+                label="Rejected Today"
+                value={stats.rejected}
+                color="#FF6962"
+              />
+            </div>
+
+            {/* Filter Bar */}
+            <FilterBar filters={filters} onFiltersChange={setFilters} />
+            {/* Pending Review Queue */}
+            <div>
+              <div className="section-header">
                 <h2 className="section-title">Pending Review</h2>
                 <button
-              onClick={() => {
-                fetchPendingThreads();
-                fetchStats();
-              }}
-              className="admin-refresh-btn"
-            >
-              <RefreshCw size={18} />
-              Refresh
-            </button>
-            </div>
-          {loading ? (
-            <div className="loading-message">
-              Loading...
-            </div>
-          ) : (
-            <>
-              <div className="posts-grid">
-                {filteredPosts.map((post) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    onApprove={handleApprove}
-                    onReject={handleReject}
-                  />
-                ))}
+                  onClick={() => {
+                    fetchPendingThreads();
+                    fetchStats();
+                  }}
+                  className="admin-refresh-btn"
+                >
+                  <RefreshCw size={18} />
+                  Refresh
+                </button>
               </div>
-              {filteredPosts.length === 0 && (
-                <div className="empty-message">
-                  No pending posts to review
+              {loading ? (
+                <div className="loading-message">
+                  Loading...
                 </div>
+              ) : (
+                <>
+                  <div className="posts-grid">
+                    {filteredPosts.map((post) => (
+                      <PostCard
+                        key={post.id}
+                        post={post}
+                        onApprove={handleApprove}
+                        onReject={handleReject}
+                      />
+                    ))}
+                  </div>
+                  {filteredPosts.length === 0 && (
+                    <div className="empty-message">
+                      No pending posts to review
+                    </div>
+                  )}
+                </>
               )}
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'users' && (
+          <>
+            <div className="section-header">
+              <h2 className="section-title" style={{ margin: 0 }}>User Management</h2>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {isAdminLevel2 && (
+                  <button
+                    onClick={() => setShowCreateAdminForm(!showCreateAdminForm)}
+                    className="admin-refresh-btn"
+                  >
+                    <UserPlus size={18} />
+                    Create Admin
+                  </button>
+                )}
+                <button
+                  onClick={fetchUsers}
+                  className="admin-refresh-btn"
+                >
+                  <RefreshCw size={18} />
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            {showCreateAdminForm && isAdminLevel2 && (
+              <div className="modal-overlay" style={{zIndex: 100}}>
+              <div style={{ 
+                background: 'rgba(0,0,0,0.4)', 
+                padding: '1.5rem', 
+                borderRadius: '15px', 
+                marginBottom: '1.5rem',
+                border: '1px solid #333',
+                backdropFilter: 'blur(15px)',
+                width: '500px'
+              }}>
+                <h3 style={{ marginBottom: '1rem', color: '#FDCFFA' }}>Create Admin User</h3>
+                <form onSubmit={handleCreateAdmin} style={{ display: 'flex', flexDirection: 'column', gap: '20px'}}>
+                  <div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', color: '#fff' }}>Username</label>
+                      <input
+                        type="text"
+                        value={createAdminData.username}
+                        onChange={(e) => setCreateAdminData({ ...createAdminData, username: e.target.value })}
+                        required
+                        style={{  color: '#fff',
+                          background: '#00000080',
+                          border: '1px solid #ffffff26',
+                          borderRadius: '12px',
+                          outline: 'none',
+                          padding: '0.9rem 1rem',
+                          fontFamily: 'unset',
+                          fontSize: '15px',
+                          width: '100%'}}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', color: '#fff' }}>Email</label>
+                      <input
+                        type="email"
+                        value={createAdminData.email}
+                        onChange={(e) => setCreateAdminData({ ...createAdminData, email: e.target.value })}
+                        required
+                        style={{  color: '#fff',
+                          background: '#00000080',
+                          border: '1px solid #ffffff26',
+                          borderRadius: '12px',
+                          outline: 'none',
+                          padding: '0.9rem 1rem',
+                          fontFamily: 'unset',
+                          fontSize: '15px',
+                          width: '100%'}}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', color: '#fff' }}>Password</label>
+                      <input
+                        type="password"
+                        value={createAdminData.password}
+                        onChange={(e) => setCreateAdminData({ ...createAdminData, password: e.target.value })}
+                        required
+                        minLength={6}
+                        style={{  color: '#fff',
+                          background: '#00000080',
+                          border: '1px solid #ffffff26',
+                          borderRadius: '12px',
+                          outline: 'none',
+                          padding: '0.9rem 1rem',
+                          fontFamily: 'unset',
+                          fontSize: '15px',
+                          width: '100%'}}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', color: '#fff' }}>Role</label>
+                      <CustomSelect
+                        value={createAdminData.role}
+                        onChange={(value) => setCreateAdminData({ ...createAdminData, role: value as 'admin_level_1' | 'admin_level_2' })}
+                        options={[
+                          { value: 'admin_level_1', label: 'Admin Level 1' },
+                          { value: 'admin_level_2', label: 'Admin Level 2' }
+                        ]}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'end' }}>
+                  <button
+                      type="button"
+                      onClick={() => {
+                        setShowCreateAdminForm(false);
+                        setCreateAdminData({ username: '', email: '', password: '', role: 'admin_level_1' });
+                      }}
+                      className="modal-close"
+                      style={{ width: '40px' }}
+                    >
+                      <X size={18} />
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      style={{ width: '40px' }}
+                    >
+                      <Check size={18} />
+                    </button>
+                  </div>
+                </form>
+              </div>
+              </div>
+            )}
+
+            <div>
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={userFilters.search}
+                onChange={(e) => setUserFilters({ search: e.target.value })}
+                className="filter-input"
+                style={{ width: '100%', maxWidth: '500px' }}
+              />
+            </div>
+
+            {usersLoading ? (
+              <div className="loading-message">
+                Loading users...
+              </div>
+            ) : (
+              <>
+                {filteredUsers.length === 0 ? (
+                  <div className="empty-message">
+                    No users found
+                  </div>
+                ) : (
+                  <div className="users-table-container">
+                    <table className="users-table">
+                      <thead>
+                        <tr>
+                          <th>Username</th>
+                          <th>Email</th>
+                          <th>Role</th>
+                          <th>Status</th>
+                          <th>Ban Expires</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredUsers.map((user) => {
+                          const isAdminLevel2 = getCurrentUserRole() === 'admin_level_2';
+                          const canBan = isAdminLevel2 
+                            ? (user.role === 'user' || user.role === 'admin_level_1')
+                            : (getCurrentUserRole() === 'admin_level_1' && user.role === 'user');
+                          const canDelete = isAdminLevel2 && (user.role === 'user' || user.role === 'admin_level_1');
+                          const isBanned = user.isActive === false;
+
+                          return (
+                            <tr key={user.id} className={isBanned ? 'banned-row' : ''}>
+                              <td>
+                                <Link 
+                                  to={`/profile/${user.username}`} 
+                                  style={{ color: '#FDCFFA', textDecoration: 'none', fontWeight: 'bold' }}
+                                >
+                                  {user.username}
+                                </Link>
+                              </td>
+                              <td>{user.email}</td>
+                              <td>
+                                  {user.role === 'admin_level_2' ? 'Admin L2' : user.role === 'admin_level_1' ? 'Admin L1' : 'User'}
+                              </td>
+                              <td>
+                                {isBanned ? (
+                                  <span style={{ color: '#FDCFFA', fontWeight: 'bold' }}>Banned</span>
+                                ) : (
+                                  <span style={{ fontWeight: 'bold' }}>Active</span>
+                                )}
+                              </td>
+                              <td>
+                                {isBanned ? formatBanExpiry(user.bannedUntil) : '-'}
+                              </td>
+                              <td>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                  {!isBanned ? (
+                                    canBan && (
+                                      <button
+                                        onClick={() => handleBanUser(user.id)}
+                                        className="post-action-btn"
+                                        title="Ban User"
+                                        style={{ padding: '0.5rem' }}
+                                      >
+                                        <Ban size={16} />
+                                      </button>
+                                    )
+                                  ) : (
+                                    canBan && (
+                                      <button
+                                        onClick={() => handleUnbanUser(user.id)}
+                                        className="post-action-btn approve"
+                                        title="Unban User"
+                                        style={{ padding: '0.5rem' }}
+                                      >
+                                        <UserCheck size={16} />
+                                      </button>
+                                    )
+                                  )}
+                                  {canDelete && (
+                                    <button
+                                      onClick={() => handleDeleteUser(user.id)}
+                                      className="post-action-btn"
+                                      title="Delete User"
+                                      style={{ background: '#FF6962', padding: '0.5rem' }}
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
       </div>
+
+      {/* Ban User Modal */}
+      {showBanModal && (
+        <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={() => {
+          setShowBanModal(false);
+          setBanUserId(null);
+          setBanDuration('forever');
+        }}>
+          <div 
+            style={{ 
+              background: 'rgba(0,0,0,0.4)', 
+              padding: '1.5rem', 
+              borderRadius: '15px', 
+              border: '1px solid #333',
+              backdropFilter: 'blur(15px)',
+              width: '500px',
+              maxWidth: '90vw'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginBottom: '1rem', color: '#FDCFFA' }}>Ban User</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#fff' }}>Set Ban Duration</label>
+                <CustomSelect
+                  value={banDuration}
+                  onChange={(value) => setBanDuration(value)}
+                  options={[
+                    { value: '1', label: '1 hour' },
+                    { value: '24', label: '1 day' },
+                    { value: '168', label: '1 week' },
+                    { value: '720', label: '1 month' },
+                    { value: 'forever', label: 'Forever' }
+                  ]}
+                  placeholder="Select ban duration"
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowBanModal(false);
+                  setBanUserId(null);
+                  setBanDuration('forever');
+                }}
+                className="modal-close"
+                style={{ width: '40px' }}
+              >
+                <X size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmBan}
+                className="btn btn-primary"
+                style={{ width: '40px' }}
+              >
+                <Check size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Footer />
     </div>
   );
 }

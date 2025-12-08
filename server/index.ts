@@ -8,12 +8,16 @@ import userRoutes from './routes/user.ts';
 import authRoutes from './routes/auth.ts';
 import threadRoutes from './routes/thread.ts';
 import commentRoutes from './routes/comment.ts';
+import adminRoutes from './routes/admin.ts';
 import { errorHandler } from './middleware/error.ts';
 import { initGridFS } from './services/gridfs.ts';
 
 (async function() {
    try {
     const mongoUri = process.env.MONGODB_URI;
+    if (!mongoUri) {
+      throw new Error('MONGODB_URI is not defined');
+    }
     await mongoose.connect(mongoUri);
     console.log("Connect to the MongoDB successfully!");
     
@@ -27,7 +31,15 @@ import { initGridFS } from './services/gridfs.ts';
    
    // Middleware
    app.use(cors());
-   app.use(express.json());
+   // Only parse JSON for non-multipart requests (multer handles multipart)
+   app.use((req, res, next) => {
+     const contentType = req.headers['content-type'] || '';
+     if (!contentType.includes('multipart/form-data')) {
+       express.json()(req, res, next);
+     } else {
+       next();
+     }
+   });
    
    // Routes
    app.get('/', (req, res) => {
@@ -37,6 +49,7 @@ import { initGridFS } from './services/gridfs.ts';
    app.use('/api/users', userRoutes);
    app.use('/api/threads', threadRoutes);
    app.use('/api/comments', commentRoutes);
+   app.use('/api/admin', adminRoutes);
    
    // Error handling middleware (must be last)
    app.use(errorHandler);

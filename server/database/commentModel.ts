@@ -7,6 +7,7 @@ export interface CommentI extends Document {
     thread: mongoose.Types.ObjectId;
     parentComment?: mongoose.Types.ObjectId;
     likes: mongoose.Types.ObjectId[];
+    attachments?: mongoose.Types.ObjectId[];
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -19,6 +20,7 @@ const CommentSchema = new Schema<CommentI>({
     thread: { type: Schema.Types.ObjectId, ref: "Thread", required: true },
     parentComment: { type: Schema.Types.ObjectId, ref: "Comment" },
     likes: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    attachments: [{ type: Schema.Types.ObjectId }], // Store GridFS file IDs
     isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 

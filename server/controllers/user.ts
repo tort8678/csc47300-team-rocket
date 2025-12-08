@@ -5,6 +5,7 @@ import { AuthRequest } from "../types/index.js";
 import ThreadModel, { ThreadStatus } from "../database/threadModel.js";
 import CommentModel from "../database/commentModel.js";
 import { UserRole } from "../types/index.js";
+import { isAdmin } from "../middleware/auth.js";
 
 
 export class UserController {
@@ -66,6 +67,41 @@ export class UserController {
                     message: "User not found" 
                 });
             }
+
+            // Check if user is banned - hide from non-admins
+            const authHeader = req.headers.authorization;
+            let isAdminUser = false;
+            
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                try {
+                    const jwt = require('jsonwebtoken');
+                    const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+                    const token = authHeader.substring(7);
+                    const decoded = jwt.verify(token, JWT_SECRET) as any;
+                    // Use the imported isAdmin function for consistency
+                    isAdminUser = isAdmin(decoded.role);
+                } catch (e) {
+                    // Invalid token, treat as non-admin
+                }
+            }
+
+            // Check and auto-unban if ban expired
+            const now = new Date();
+            if (!user.isActive && user.bannedUntil && user.bannedUntil <= now) {
+                user.isActive = true;
+                user.bannedUntil = null;
+                await user.save();
+            }
+
+            // If user is banned and requester is not admin, return not found
+            // Admins can view banned users' profiles
+            if (!user.isActive && !isAdminUser) {
+                return res.status(404).json({ 
+                    success: false,
+                    message: "User not found" 
+                });
+            }
+
             res.json({
                 success: true,
                 data: {
@@ -79,6 +115,8 @@ export class UserController {
                     location: user.location,
                     EMPLID: user.EMPLID,
                     role: user.role,
+                    isActive: user.isActive,
+                    bannedUntil: user.bannedUntil,
                     createdAt: user.createdAt
                 }
             });
@@ -118,6 +156,14 @@ export class UserController {
                 });
             }
 
+            // Check and auto-unban if ban expired
+            const now = new Date();
+            if (!user.isActive && user.bannedUntil && user.bannedUntil <= now) {
+                user.isActive = true;
+                user.bannedUntil = null;
+                await user.save();
+            }
+
             res.json({
                 success: true,
                 data: {
@@ -131,6 +177,8 @@ export class UserController {
                     location: user.location,
                     EMPLID: user.EMPLID,
                     role: user.role,
+                    isActive: user.isActive,
+                    bannedUntil: user.bannedUntil,
                     createdAt: user.createdAt
                 }
             });
@@ -201,10 +249,10 @@ export class UserController {
                 });
             }
 
-            const isAdmin = (req as AuthRequest).user?.role === UserRole.ADMIN;
+            const isAdminUser = (req as AuthRequest).user ? isAdmin((req as AuthRequest).user!.role) : false;
             const query: any = { author: user._id, isActive: true };
             
-            if (!isAdmin) {
+            if (!isAdminUser) {
                 query.status = ThreadStatus.APPROVED;
             }
 

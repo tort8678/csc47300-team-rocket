@@ -4,6 +4,7 @@ import ThreadModel, { ThreadStatus } from '../database/threadModel.ts';
 import CommentModel from '../database/commentModel.ts';
 import UserModel from '../database/userModel.ts';
 import { AuthRequest, UserRole } from '../types/index.ts';
+import { isAdmin } from '../middleware/auth.ts';
 import { uploadFileToGridFS, getFileFromGridFS, getFileInfoFromGridFS } from '../services/gridfs.ts';
 
 // Validation schemas
@@ -35,7 +36,7 @@ export class ThreadController {
       const query: any = { isActive: true };
       
       // Admin can see all statuses, regular users only see approved
-      const isAdmin = req.user?.role === UserRole.ADMIN;
+      const isAdminUser = req.user ? isAdmin(req.user.role) : false;
       if (!isAdmin) {
         query.status = ThreadStatus.APPROVED;
       } else {
@@ -145,7 +146,7 @@ export class ThreadController {
 
       // Check if user can view this thread
       // Regular users can only see approved threads, unless it's their own
-      const isAdmin = req.user?.role === UserRole.ADMIN;
+      const isAdminUser = req.user ? isAdmin(req.user.role) : false;
       const isAuthor = req.user && thread.author.toString() === req.user.userId;
       
       if (!isAdmin && !isAuthor && thread.status !== ThreadStatus.APPROVED) {
@@ -650,7 +651,7 @@ export class ThreadController {
 
   static async getPendingThreads(req: AuthRequest, res: Response) {
     try {
-      if (!req.user || req.user.role !== UserRole.ADMIN) {
+      if (!req.user || !isAdmin(req.user.role)) {
         return res.status(403).json({
           success: false,
           message: 'Admin access required'
@@ -712,7 +713,7 @@ export class ThreadController {
 
   static async approveThread(req: AuthRequest, res: Response) {
     try {
-      if (!req.user || req.user.role !== UserRole.ADMIN) {
+      if (!req.user || !isAdmin(req.user.role)) {
         return res.status(403).json({
           success: false,
           message: 'Admin access required'
@@ -747,7 +748,7 @@ export class ThreadController {
 
   static async rejectThread(req: AuthRequest, res: Response) {
     try {
-      if (!req.user || req.user.role !== UserRole.ADMIN) {
+      if (!req.user || !isAdmin(req.user.role)) {
         return res.status(403).json({
           success: false,
           message: 'Admin access required'
@@ -782,7 +783,7 @@ export class ThreadController {
 
   static async getThreadStats(req: AuthRequest, res: Response) {
     try {
-      if (!req.user || req.user.role !== UserRole.ADMIN) {
+      if (!req.user || !isAdmin(req.user.role)) {
         return res.status(403).json({
           success: false,
           message: 'Admin access required'

@@ -76,7 +76,15 @@
 .admin-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 3rem 20px;
+  padding: 20px;
+  position: relative;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .admin-stats-grid {
@@ -299,3 +307,90 @@
   opacity: 0.7;
 }
 
+/* Users Table Styles */
+.users-table-container {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.users-table thead {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.users-table th {
+  padding: 1rem;
+  text-align: left;
+  color: white;
+  font-weight: bold;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.users-table td {
+  padding: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.users-table tbody tr {
+  transition: background 0.2s;
+}
+
+.users-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.users-table tbody tr.banned-row {
+  opacity: 0.7;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.users-table tbody tr.banned-row:hover {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.tab-btn {
+  padding: 1rem 1.5rem;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  font-size: 0.9rem;
+}
+
+.tab-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.tab-btn.active {
+  color: white;
+  border-bottom-color: rgba(256, 256, 256, 0.4);
+}
+
+/* Admin Tabs */
+.admin-tabs {
+  display: flex;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  gap: 0;
+  margin-top: -20px;
+  margin-left: -20px;
+}

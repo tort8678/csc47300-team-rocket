@@ -22,12 +22,12 @@ const Header: React.FC = () => {
             if (userStr) {
                 try {
                     const user: User = JSON.parse(userStr);
-                    setIsAdmin(user.role === 'admin');
+                    setIsAdmin(user.role === 'admin_level_1' || user.role === 'admin_level_2');
                 } catch (e) {
                     // If parsing fails, try to fetch user from API
                     apiService.getCurrentUser().then(response => {
                         if (response.success && response.data) {
-                            setIsAdmin(response.data.role === 'admin');
+                            setIsAdmin(response.data.role === 'admin_level_1' || response.data.role === 'admin_level_2');
                         }
                     }).catch(() => {
                         setIsAdmin(false);
@@ -101,7 +101,7 @@ const Header: React.FC = () => {
                             <li>
                                 <Link
                                     to="/admin"
-                                    className={location.pathname === '/admin' || location.pathname === '/admin/dashboard' ? 'active' : ''}
+                                    className={location.pathname === '/admin' ? 'active' : ''}
                                 >
                                     Admin
                                 </Link>

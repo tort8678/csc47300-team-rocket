@@ -137,12 +137,33 @@ export class AuthController {
         });
       }
 
-      // Check if user is active
+      // Check if user is banned
       if (!user.isActive) {
-        return res.status(403).json({
-          success: false,
-          message: 'Account is deactivated. Please contact an administrator.'
-        });
+        let banMessage = 'Your account has been banned.';
+        
+        if (user.bannedUntil) {
+          const now = new Date();
+          if (user.bannedUntil > now) {
+            // Still banned, show when it expires
+            const expiresIn = Math.ceil((user.bannedUntil.getTime() - now.getTime()) / (1000 * 60 * 60));
+            banMessage = `Your account has been banned. The ban will expire in ${expiresIn} hour${expiresIn > 1 ? 's' : ''}.`;
+          } else {
+            // Ban expired, reactivate user
+            user.isActive = true;
+            user.bannedUntil = null;
+            await user.save();
+          }
+        } else {
+          banMessage = 'Your account has been permanently banned. Please contact an administrator.';
+        }
+        
+        // If still banned after checking expiration
+        if (!user.isActive) {
+          return res.status(403).json({
+            success: false,
+            message: banMessage
+          });
+        }
       }
 
       // Verify password

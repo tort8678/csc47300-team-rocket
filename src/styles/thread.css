@@ -181,12 +181,6 @@
     color: rgba(255, 255, 255, 0.5);
 }
 
-.comment-form [type="submit"]{
-    position: absolute;
-    right: 30px;
-    bottom: 38.5px;
-}
-
 .login-prompt {
     margin-bottom: 2rem;
     color: rgba(255, 255, 255, 0.7);

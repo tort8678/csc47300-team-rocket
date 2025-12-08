@@ -131,3 +131,54 @@ export const generateToken = (payload: JWTPayload): string => {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d'
   });
 };
+
+// Helper functions to check admin levels
+export const isAdmin = (role: UserRole): boolean => {
+  return role === UserRole.ADMIN_LEVEL_1 || role === UserRole.ADMIN_LEVEL_2;
+};
+
+export const isAdminLevel2 = (role: UserRole): boolean => {
+  return role === UserRole.ADMIN_LEVEL_2;
+};
+
+// Middleware to check if user is any admin
+export const requireAdmin = (req: AuthRequest, res: Response<ApiResponse>, next: NextFunction): void => {
+  if (!req.user) {
+    res.status(401).json({
+      success: false,
+      message: 'Authentication required'
+    });
+    return;
+  }
+
+  if (!isAdmin(req.user.role)) {
+    res.status(403).json({
+      success: false,
+      message: 'Admin access required'
+    });
+    return;
+  }
+
+  next();
+};
+
+// Middleware to check if user is Admin Level 2
+export const requireAdminLevel2 = (req: AuthRequest, res: Response<ApiResponse>, next: NextFunction): void => {
+  if (!req.user) {
+    res.status(401).json({
+      success: false,
+      message: 'Authentication required'
+    });
+    return;
+  }
+
+  if (!isAdminLevel2(req.user.role)) {
+    res.status(403).json({
+      success: false,
+      message: 'Admin Level 2 access required'
+    });
+    return;
+  }
+
+  next();
+};

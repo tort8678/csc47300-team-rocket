@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Heart, Eye, ArrowLeft, Edit, Trash, X, Reply, SendHorizontal, Download, Check } from 'lucide-react';
+import { Heart, Eye, ArrowLeft, Edit, Trash, X, Reply, SendHorizontal, Download, Check, Paperclip } from 'lucide-react';
 import Header from '../../components/header';
 import Footer from '../../components/footer';
 import apiService from '../../services/api';
@@ -23,12 +23,15 @@ export default function ThreadDetail() {
   const [error, setError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [newComment, setNewComment] = useState('');
+  const [commentFiles, setCommentFiles] = useState<File[]>([]);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
+  const [replyFiles, setReplyFiles] = useState<File[]>([]);
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const [attachmentNames, setAttachmentNames] = useState<Record<string, string>>({});
+  const [commentAttachmentNames, setCommentAttachmentNames] = useState<Record<string, string>>({});
 
-  // Fetch attachment filenames
+  // Fetch attachment filenames for thread
   useEffect(() => {
     if (thread?.attachments && thread.attachments.length > 0) {
       const fetchAttachmentNames = async () => {
@@ -53,6 +56,53 @@ export default function ThreadDetail() {
       fetchAttachmentNames();
     }
   }, [thread?.attachments]);
+
+  // Fetch attachment filenames for comments
+  useEffect(() => {
+    const fetchCommentAttachmentNames = async () => {
+      const names: Record<string, string> = {};
+      const allCommentAttachments: string[] = [];
+      
+      // Collect all attachment IDs from all comments and replies
+      const collectAttachments = (commentList: CommentWithReplies[]) => {
+        commentList.forEach(comment => {
+          if (comment.attachments && comment.attachments.length > 0) {
+            allCommentAttachments.push(...comment.attachments);
+          }
+          if (comment.replies && comment.replies.length > 0) {
+            collectAttachments(comment.replies);
+          }
+        });
+      };
+      
+      collectAttachments(comments);
+      
+      if (allCommentAttachments.length > 0) {
+        await Promise.all(
+          allCommentAttachments.map(async (fileId) => {
+            if (!names[fileId]) {
+              try {
+                const response = await fetch(`http://localhost:3000/api/comments/attachments/${fileId}/info`);
+                if (response.ok) {
+                  const data = await response.json();
+                  if (data.success && data.data) {
+                    names[fileId] = data.data.filename;
+                  }
+                }
+              } catch (error) {
+                console.error(`Error fetching comment attachment info for ${fileId}:`, error);
+              }
+            }
+          })
+        );
+        setCommentAttachmentNames(prev => ({ ...prev, ...names }));
+      }
+    };
+    
+    if (comments.length > 0) {
+      fetchCommentAttachmentNames();
+    }
+  }, [comments]);
 
   useEffect(() => {
     if (thread) {
@@ -170,17 +220,78 @@ export default function ThreadDetail() {
     if (!threadId || !newComment.trim() || !currentUser) return;
 
     try {
-      const response = await apiService.createComment(threadId, {
-        content: newComment
-      });
-
-      if (response.success) {
-        setNewComment('');
-        loadThread();
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showModal('Please log in to post a comment.', 'error');
+        return;
       }
-    } catch (err) {
+
+      if (commentFiles.length > 0) {
+        // Use FormData if files are attached
+        const formData = new FormData();
+        formData.append('content', newComment);
+        
+        commentFiles.forEach((file) => {
+          formData.append('files', file);
+        });
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/comments/thread/${threadId}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to post comment');
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          setNewComment('');
+          setCommentFiles([]);
+          
+          // Fetch attachment names for the newly created comment
+          if (data.data?.attachments && data.data.attachments.length > 0) {
+            const names: Record<string, string> = {};
+            await Promise.all(
+              data.data.attachments.map(async (fileId: string) => {
+                try {
+                  const infoResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/comments/attachments/${fileId}/info`);
+                  if (infoResponse.ok) {
+                    const infoData = await infoResponse.json();
+                    if (infoData.success && infoData.data) {
+                      names[fileId] = infoData.data.filename;
+                    }
+                  }
+                } catch (error) {
+                  console.error(`Error fetching attachment info for ${fileId}:`, error);
+                }
+              })
+            );
+            setCommentAttachmentNames(prev => ({ ...prev, ...names }));
+          }
+          
+          loadThread();
+        } else {
+          throw new Error(data.message || 'Failed to post comment');
+        }
+      } else {
+        // Use JSON if no files
+        const response = await apiService.createComment(threadId, {
+          content: newComment
+        });
+
+        if (response.success) {
+          setNewComment('');
+          loadThread();
+        }
+      }
+    } catch (err: any) {
       console.error('Failed to create comment:', err);
-      showModal('Failed to post comment.', 'error');
+      showModal(err.message || 'Failed to post comment.', 'error');
     }
   };
 
@@ -188,19 +299,82 @@ export default function ThreadDetail() {
     if (!threadId || !replyContent.trim() || !currentUser) return;
 
     try {
-      const response = await apiService.createComment(threadId, {
-        content: replyContent,
-        parentCommentId
-      });
-
-      if (response.success) {
-        setReplyContent('');
-        setReplyingTo(null);
-        loadThread();
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showModal('Please log in to post a reply.', 'error');
+        return;
       }
-    } catch (err) {
+
+      if (replyFiles.length > 0) {
+        // Use FormData if files are attached
+        const formData = new FormData();
+        formData.append('content', replyContent);
+        formData.append('parentCommentId', parentCommentId);
+        
+        replyFiles.forEach((file) => {
+          formData.append('files', file);
+        });
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/comments/thread/${threadId}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to post reply');
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          setReplyContent('');
+          setReplyFiles([]);
+          setReplyingTo(null);
+          
+          // Fetch attachment names for the newly created reply
+          if (data.data?.attachments && data.data.attachments.length > 0) {
+            const names: Record<string, string> = {};
+            await Promise.all(
+              data.data.attachments.map(async (fileId: string) => {
+                try {
+                  const infoResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/comments/attachments/${fileId}/info`);
+                  if (infoResponse.ok) {
+                    const infoData = await infoResponse.json();
+                    if (infoData.success && infoData.data) {
+                      names[fileId] = infoData.data.filename;
+                    }
+                  }
+                } catch (error) {
+                  console.error(`Error fetching attachment info for ${fileId}:`, error);
+                }
+              })
+            );
+            setCommentAttachmentNames(prev => ({ ...prev, ...names }));
+          }
+          
+          loadThread();
+        } else {
+          throw new Error(data.message || 'Failed to post reply');
+        }
+      } else {
+        // Use JSON if no files
+        const response = await apiService.createComment(threadId, {
+          content: replyContent,
+          parentCommentId
+        });
+
+        if (response.success) {
+          setReplyContent('');
+          setReplyingTo(null);
+          loadThread();
+        }
+      }
+    } catch (err: any) {
       console.error('Failed to post reply:', err);
-      showModal('Failed to post reply.', 'error');
+      showModal(err.message || 'Failed to post reply.', 'error');
     }
   };
 
@@ -256,7 +430,7 @@ export default function ThreadDetail() {
   const renderComment = (comment: CommentWithReplies, depth: number = 0) => {
     const isOwn = currentUser && comment.author?.id === currentUser.id;
     const admin = currentUser?.role?.startsWith('admin');
-    const canEdit = isOwn || admin;
+    const canEdit = isOwn || currentUser?.role === 'admin_level_2';
 
     const expanded = expandedReplies.has(comment.id);
     const replyCount = comment.replies?.length || 0;
@@ -272,6 +446,31 @@ export default function ThreadDetail() {
             <span className="comment-time">{getTimeAgo(comment.createdAt)}</span>
           </div>
           <div className="comment-content">{comment.content}</div>
+          {comment.attachments && comment.attachments.length > 0 && (
+            <div className="comment-attachments" style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {comment.attachments.map((fileId) => (
+                <a
+                  key={fileId}
+                  href={`http://localhost:3000/api/comments/attachments/${fileId}`}
+                  download
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    color: '#FDCFFA',
+                    textDecoration: 'none',
+                    padding: '0.5rem',
+                    background: 'rgba(253, 207, 250, 0.1)',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  <Download size={16} />
+                  {commentAttachmentNames[fileId] || 'Attachment'}
+                </a>
+              ))}
+            </div>
+          )}
           </div>
           <div className="comment-actions">
             <button
@@ -314,7 +513,7 @@ export default function ThreadDetail() {
             
             )}
 
-            {canEdit && (
+            {(isOwn ||currentUser?.role === 'admin_level_2') && (
               <button
                 className="delete-comment-btn"
                 onClick={async () => {
@@ -346,11 +545,66 @@ export default function ThreadDetail() {
           onChange={(e) => setReplyContent(e.target.value)}
           placeholder="Write a reply..."
         />
-        <div className="reply-actions">
+        <div className="reply-actions"style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+          <input
+            id={`reply-file-input-${comment.id}`}
+            type="file"
+            multiple
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const selectedFiles = Array.from(e.target.files || []);
+              if (selectedFiles.length + replyFiles.length > 5) {
+                showModal('Maximum 5 files allowed per reply.', 'error');
+                return;
+              }
+              setReplyFiles([...replyFiles, ...selectedFiles]);
+            }}
+          />
+        <div>
+        {replyFiles.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+              {replyFiles.map((file, index) => (
+                <span key={index} style={{                     
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  color: '#FDCFFA',
+                  textDecoration: 'none',
+                  padding: '0.5rem',
+                  background: 'rgba(253, 207, 250, 0.1)',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem' }}>
+                  {file.name}
+                  <button
+                    type="button"
+                    onClick={() => setReplyFiles(replyFiles.filter((_, i) => i !== index))}
+                    style={{ background: 'none', border: 'none', color: '#FDCFFA', cursor: 'pointer', padding: 0, display: 'flex' }}
+                  >
+                    <X size={14} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+        <label
+            htmlFor={`reply-file-input-${comment.id}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              cursor: 'pointer',
+              color: 'rgba(255, 255, 255, 0.7)',
+              fontSize: '0.875rem'
+            }}
+          >
+            <Paperclip size={16} />
+          </label>
           <button
             onClick={() => {
               setReplyingTo(null);
               setReplyContent('');
+              setReplyFiles([]);
             }}
             className="btn btn-secondary btn-sm"
           >
@@ -402,8 +656,8 @@ export default function ThreadDetail() {
 
   const authorId = typeof thread.author === 'object' ? thread.author.id : thread.author;
   const isOwnThread = currentUser && authorId === currentUser.id;
-  const canEditThread = isOwnThread || currentUser?.role === 'admin';
-  const isAdmin = currentUser?.role === 'admin';
+  const canEditThread = isOwnThread || currentUser?.role === 'admin_level_1' || currentUser?.role === 'admin_level_2';
+  const isAdmin = currentUser?.role === 'admin_level_1' || currentUser?.role === 'admin_level_2';
   const canModerate = isAdmin && thread.status && (thread.status === 'pending' || thread.status === 'rejected');
 
   const handleApprove = async () => {
@@ -578,9 +832,11 @@ export default function ThreadDetail() {
                 <Link to={`/thread/${threadId}/edit`} className="edit-link">
                   <Edit size={25} />
                 </Link>
+                {(isOwnThread ||currentUser?.role === 'admin_level_2') && (
                 <button onClick={handleDeleteThread} className="delete-btn">
                   <Trash size={25} />
                 </button>
+                )} 
               </div>
             )}
           </div>
@@ -597,9 +853,65 @@ export default function ThreadDetail() {
                 placeholder="Write a comment..."
                 required
               />
-              <button type="submit" className="btn btn-primary">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', marginBottom: '0.5rem', position: 'absolute', right: '30px', bottom: '38.5px' }}>
+                <input
+                  id="comment-file-input"
+                  type="file"
+                  multiple
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const selectedFiles = Array.from(e.target.files || []);
+                    if (selectedFiles.length + commentFiles.length > 5) {
+                      showModal('Maximum 5 files allowed per comment.', 'error');
+                      return;
+                    }
+                    setCommentFiles([...commentFiles, ...selectedFiles]);
+                  }}
+                />
+                {commentFiles.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                    {commentFiles.map((file, index) => (
+                      <span key={index} style={{                     
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        color: '#FDCFFA',
+                        textDecoration: 'none',
+                        padding: '0.5rem',
+                        background: 'rgba(253, 207, 250, 0.1)',
+                        borderRadius: '8px',
+                        fontSize: '0.875rem'
+                         }}>
+                        {file.name}
+                        <button
+                          type="button"
+                          onClick={() => setCommentFiles(commentFiles.filter((_, i) => i !== index))}
+                          style={{ display: 'flex', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#FDCFFA' }}
+                        >
+                          <X size={14} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <label
+                  htmlFor="comment-file-input"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    cursor: 'pointer',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  <Paperclip size={18} />
+                </label>
+                <button type="submit" className="btn btn-primary">
                 <SendHorizontal size={18} />
               </button>
+              </div>
+              
             </form>
           ) : (
             <p className="login-prompt">

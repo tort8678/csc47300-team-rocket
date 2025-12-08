@@ -17,6 +17,7 @@ export interface UserI extends Document {
     EMPLID?: number;
     role: UserRole;
     isActive: boolean;
+    bannedUntil?: Date | null;
     comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -32,7 +33,8 @@ const userSchema = new Schema<UserI>({
     location: { type: String },
     EMPLID: { type: Number, unique: true, sparse: true },
     role: { type: String, enum: Object.values(UserRole), default: UserRole.USER, required: true },
-    isActive: { type: Boolean, default: true }
+    isActive: { type: Boolean, default: true },
+    bannedUntil: { type: Date, default: null }
 }, { timestamps: true });
 
 // Hash password before saving
