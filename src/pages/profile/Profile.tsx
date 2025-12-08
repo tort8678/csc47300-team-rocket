@@ -420,7 +420,8 @@ export default function Profile() {
         }
     };
 
-    if (loading || !user) {
+    // Show loading state only for initial load, but render page structure
+    if (loading && !user) {
         return (
             <div>
                 <Header />
@@ -434,16 +435,31 @@ export default function Profile() {
         );
     }
 
+    // If user is null after loading completes, show error
+    if (!loading && !user) {
+        return (
+            <div>
+                <Header />
+                <main className="container">
+                    <div style={{ textAlign: 'center', padding: '2rem', color: '#ffffffb3' }}>
+                        Failed to load profile.
+                    </div>
+                </main>
+                <Footer />
+            </div>
+        );
+    }
+
     // Get user initials for avatar
-    const initials = user.username
-        .split(' ')
+    const initials = user?.username
+        ?.split(' ')
         .map(name => name[0])
         .join('')
         .toUpperCase()
-        .slice(0, 2);
+        .slice(0, 2) || 'U';
 
     // Format date
-    const joinDate = user.createdAt 
+    const joinDate = user?.createdAt 
         ? new Date(user.createdAt).toLocaleDateString('en-US', {
             month: 'long',
             year: 'numeric'
@@ -482,11 +498,11 @@ export default function Profile() {
                             <div className="profile-details" style={{ flex: 1 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                                     <div>
-                                        <h1 id="profile-username">{user.username}</h1>
-                                        <p className="user-title">{user.major || 'Student'}</p>
+                                        <h1 id="profile-username">{user?.username || 'Loading...'}</h1>
+                                        <p className="user-title">{user?.major || 'Student'}</p>
                                         <p className="join-date">Member since {joinDate}</p>
                                     </div>
-                                    {user.isActive === false && (
+                                    {user?.isActive === false && (
                                         <span style={{ 
                                             padding: '0.5rem 1rem', 
                                             borderRadius: '4px',
@@ -635,21 +651,21 @@ export default function Profile() {
                                             </button>
                                         )}
                                     </div>
-                                    <p>{user.bio || 'No bio added yet. Click "Edit Profile" to add one!'}</p>
+                                    <p>{user?.bio || 'No bio added yet. Click "Edit Profile" to add one!'}</p>
                                     <div className="about-details">
-                                        {user.major && (
+                                        {user?.major && (
                                             <div className="detail-item">
                                                 <GraduationCap className="detail-icon" size={20}/>
                                                 <span>{user.major}</span>
                                             </div>
                                         )}
-                                        {user.classYear && (
+                                        {user?.classYear && (
                                             <div className="detail-item">
                                                 <Calendar className="detail-icon" size={20}/>
                                                 <span>{user.classYear}</span>
                                             </div>
                                         )}
-                                        {user.location && (
+                                        {user?.location && (
                                             <div className="detail-item">
                                                 <MapPin className="detail-icon" size={20}/>
                                                 <span>{user.location}</span>

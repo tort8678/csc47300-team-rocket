@@ -178,20 +178,6 @@ const Categories: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div>
-        <Header />
-        <main className="container">
-          <div style={{ textAlign: 'center', padding: '2rem', color: '#ffffffb3' }}>
-            Loading categories...
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
       <div>
         <Header />
@@ -204,50 +190,50 @@ const Categories: React.FC = () => {
 
           <div className="categories-container">
             {categoryGroups.map((group) => (
-                <div key={group.label} className="category-section">
-                  <h2>{getGroupIcon(group.label)} {group.label}</h2>
-                  <div className="category-list">
-                    {group.options.map((option) => {
-                      const stats = getCategoryStats(option.value);
-                      return (
-                        <Link 
-                        to={`/threads?category=${option.value}`}
-                        style={{ color: 'inherit', textDecoration: 'none' }} key={option.value} className="category-item">
-                            <div className="category-info">
-                              <h3>
-                              {option.label}
-                              </h3>
-                              <p>{categoryDescriptions[option.value]}</p>
+              <div key={group.label} className="category-section">
+                <h2>{getGroupIcon(group.label)} {group.label}</h2>
+                <div className="category-list">
+                  {group.options.map((option) => {
+                    const stats = getCategoryStats(option.value);
+                    return (
+                      <Link 
+                      to={`/threads?category=${option.value}`}
+                      style={{ color: 'inherit', textDecoration: 'none' }} key={option.value} className="category-item">
+                          <div className="category-info">
+                            <h3>
+                            {option.label}
+                            </h3>
+                            <p>{categoryDescriptions[option.value]}</p>
+                          </div>
+                          <div className="category-stats">
+                            <div className="stat-item">
+                              <span className="stat-value">{stats.threads}</span>
+                              <span className="stat-label">Threads</span>
                             </div>
-                            <div className="category-stats">
-                              <div className="stat-item">
-                                <span className="stat-value">{stats.threads}</span>
-                                <span className="stat-label">Threads</span>
-                              </div>
-                              <div className="stat-item">
-                                <span className="stat-value">{stats.posts}</span>
-                                <span className="stat-label">Posts</span>
-                              </div>
+                            <div className="stat-item">
+                              <span className="stat-value">{stats.posts}</span>
+                              <span className="stat-label">Posts</span>
                             </div>
-                            {stats.latestThread ? (
-                                <div className="latest-post">
-                                  <span className="latest-label">Latest:</span>
-                                  <Link to={`/thread/${stats.latestThread.id}`} className="latest-thread">
-                                    {stats.latestThread.title}
-                                  </Link>
-                                  <span className="latest-user">by {stats.latestThread.author}</span>
-                                  <span className="latest-time">{getTimeAgo(stats.latestThread.createdAt)}</span>
-                                </div>
-                            ) : (
-                                <div className="latest-post">
-                                  <span className="latest-label">No threads yet</span>
-                                </div>
-                            )}
-                        </Link>
-                      );
-                    })}
-                  </div>
+                          </div>
+                          {stats.latestThread ? (
+                              <div className="latest-post">
+                                <span className="latest-label">Latest:</span>
+                                <Link to={`/thread/${stats.latestThread.id}`} className="latest-thread">
+                                  {stats.latestThread.title}
+                                </Link>
+                                <span className="latest-user">by {stats.latestThread.author}</span>
+                                <span className="latest-time">{getTimeAgo(stats.latestThread.createdAt)}</span>
+                              </div>
+                          ) : (
+                              <div className="latest-post">
+                                <span className="latest-label">No threads yet</span>
+                              </div>
+                          )}
+                      </Link>
+                    );
+                  })}
                 </div>
+              </div>
             ))}
           </div>
         </main>

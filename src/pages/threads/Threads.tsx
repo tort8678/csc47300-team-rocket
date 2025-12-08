@@ -332,7 +332,7 @@ export default function Threads() {
           </div>
 
           <div className="threads-list">
-            {loading ? (
+            {loading && threads.length === 0 ? (
                 <div className="empty-message">Loading threads...</div>
             ) : filteredAndSortedThreads.length === 0 ? (
                 <div className="empty-message">

@@ -629,19 +629,8 @@ export default function ThreadDetail() {
     );
   };
 
-  if (loading) {
-    return (
-      <div>
-        <Header />
-        <main className="container loading-container">
-          <p>Loading thread...</p>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (error || !thread) {
+  // Show error only if loading is complete and there's an error or no thread
+  if (!loading && (error || !thread)) {
     return (
       <div>
         <Header />
@@ -654,11 +643,11 @@ export default function ThreadDetail() {
     );
   }
 
-  const authorId = typeof thread.author === 'object' ? thread.author.id : thread.author;
+  const authorId = thread ? (typeof thread.author === 'object' ? thread.author.id : thread.author) : null;
   const isOwnThread = currentUser && authorId === currentUser.id;
   const canEditThread = isOwnThread || currentUser?.role === 'admin_level_1' || currentUser?.role === 'admin_level_2';
   const isAdmin = currentUser?.role === 'admin_level_1' || currentUser?.role === 'admin_level_2';
-  const canModerate = isAdmin && thread.status && (thread.status === 'pending' || thread.status === 'rejected');
+  const canModerate = isAdmin && thread?.status && (thread.status === 'pending' || thread.status === 'rejected');
 
   const handleApprove = async () => {
     if (!threadId || !isAdmin) return;
@@ -753,6 +742,11 @@ export default function ThreadDetail() {
               </div>
             </div>
           )}
+        {loading && !thread ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: '#ffffffb3' }}>
+            Loading thread...
+          </div>
+        ) : thread ? (
         <article className="thread-detail">
           <div className="thread-header">
             <h1>{thread.title}</h1>
@@ -841,7 +835,8 @@ export default function ThreadDetail() {
             )}
           </div>
         </article>
-        {(thread.status === 'approved') && (
+        ) : null}
+        {thread && (thread.status === 'approved') && (
         <section className="comments-section">
           <h2>Comments ({comments.length})</h2>
 
@@ -920,7 +915,9 @@ export default function ThreadDetail() {
           )}
 
           <div className="comments-list">
-            {comments.length === 0 ? (
+            {loading && comments.length === 0 ? (
+              <p className="comments-empty">Loading comments...</p>
+            ) : comments.length === 0 ? (
               <p className="comments-empty">No comments yet. Be the first to comment!</p>
             ) : (
               comments.map((comment) => renderComment(comment))

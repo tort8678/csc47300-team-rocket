@@ -74,19 +74,6 @@ export default function HomePage() {
         return `${days} day${days > 1 ? 's' : ''} ago`;
     };
 
-    if (loading) {
-        return (
-            <div>
-                <Header />
-                <main className="container">
-                    <div style={{ textAlign: 'center', padding: '2rem', color: '#ffffffb3' }}>
-                        Loading...
-                    </div>
-                </main>
-            </div>
-        );
-    }
-
     return (
         <div>
             <Header />
@@ -173,7 +160,9 @@ export default function HomePage() {
 
                 <section className="recent-activity">
                     <h2>Recent Activity</h2>
-                    {threads.length === 0 ? (
+                    {loading ? (
+                        <div className="empty-message">Loading threads...</div>
+                    ) : threads.length === 0 ? (
                         <div className="empty-message">No threads yet. Be the first to post!</div>
                     ) : (
                         <div className="threads-list">

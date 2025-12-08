@@ -740,7 +740,7 @@ export default function App() {
     return true;
   });
 
-  // Show loading while checking auth
+  // Show loading only while checking auth initially
   if (checkingAuth) {
     return (
       <div style={{ 
@@ -842,7 +842,7 @@ export default function App() {
                   Refresh
                 </button>
               </div>
-              {loading ? (
+              {loading && posts.length === 0 ? (
                 <div className="loading-message">
                   Loading...
                 </div>
@@ -1018,7 +1018,7 @@ export default function App() {
               />
             </div>
 
-            {usersLoading ? (
+            {usersLoading && users.length === 0 ? (
               <div className="loading-message">
                 Loading users...
               </div>

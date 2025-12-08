@@ -57,8 +57,6 @@ const formatBanExpiry = (timestamp: string | Date | null | undefined) => {
 };
 
 export class AdminController {
-  // ========== USER CRUD ==========
-  
   static async getUsers(req: AuthRequest, res: Response<ApiResponse>) {
     try {
       if (!req.user) {
@@ -670,8 +668,6 @@ export class AdminController {
     }
   }
 
-  // ========== THREAD CRUD ==========
-
   static async getThreads(req: AuthRequest, res: Response<ApiResponse>) {
     try {
       if (!req.user) {
@@ -914,8 +910,6 @@ export class AdminController {
       });
     }
   }
-
-  // ========== COMMENT CRUD ==========
 
   static async getComments(req: AuthRequest, res: Response<ApiResponse>) {
     try {
